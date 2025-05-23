@@ -1,0 +1,218 @@
+import random
+import string
+from datetime import datetime, timedelta
+from abc import ABC, abstractmethod
+
+
+class DataGenerator(ABC):
+
+    def __init__(self, config):
+        self.config = config
+        self.rng = random.SystemRandom()
+
+    @abstractmethod
+    def generate(self):
+        pass
+
+
+class PrimitiveGenerator(DataGenerator):
+
+    def generate(self):
+        data_type = self.config['type']
+
+        if data_type == 'int':
+            return self.rng.randint(*self.config['range'])
+
+        elif data_type == 'float':
+            return self.rng.uniform(*self.config['range'])
+
+        elif data_type == 'str':
+            charset = self.config.get('charset')
+            length = self.config.get('length', 10)
+
+            if charset:
+                if isinstance(charset, str):
+                    return ''.join(self.rng.choice(charset) for _ in range(length))
+                elif isinstance(charset, list):
+                    return self.rng.choice(charset)
+                else:
+                    raise ValueError("不支持的 charset 类型")
+            else:
+                return ''.join(self.rng.choice(string.ascii_letters + string.digits) for _ in range(length))
+
+        elif data_type == 'bool':
+            return self.rng.choice([True, False])
+
+        else:
+            raise ValueError(f"不支持的基础类型: {data_type}")
+
+
+class TemporalGenerator(DataGenerator):
+
+    def generate(self):
+        data_type = self.config['type']
+
+        if data_type == 'date':
+            fmt = "%Y-%m-%d"
+            start = datetime.strptime(self.config['start'], fmt)
+            end = datetime.strptime(self.config['end'], fmt)
+            delta_days = (end - start).days
+            random_days = self.rng.randint(0, delta_days)
+            return (start + timedelta(days=random_days)).strftime(fmt)
+
+        raise ValueError(f"不支持的时间类型: {data_type}")
+
+
+class CompositeGenerator(DataGenerator):
+
+    def generate(self):
+        data_type = self.config['type']
+
+        if data_type == 'dict':
+            return self._generate_dict()
+        elif data_type == 'list':
+            return self._generate_list()
+        elif data_type == 'tuple':
+            return tuple(self._generate_tuple())
+        else:
+            raise ValueError(f"不支持的复合类型: {data_type}")
+
+    def _generate_dict(self):
+        return {
+            key: GeneratorFactory.create(spec).generate()
+            for key, spec in self.config['fields'].items()
+        }
+
+    def _generate_list(self):
+        return [
+            GeneratorFactory.create(self.config['element_type']).generate()
+            for _ in range(self.config.get('size', 3))
+        ]
+
+    def _generate_tuple(self):
+        return [
+            GeneratorFactory.create(self.config['element_type']).generate()
+            for _ in range(self.config.get('size', 3))
+        ]
+
+
+class StaticValueGenerator(DataGenerator):
+    def generate(self):
+        return self.config
+
+
+class GeneratorFactory:
+
+    GENERATOR_MAP = {
+        'int': PrimitiveGenerator,
+        'float': PrimitiveGenerator,
+        'str': PrimitiveGenerator,
+        'bool': PrimitiveGenerator,
+        'date': TemporalGenerator,
+        'dict': CompositeGenerator,
+        'list': CompositeGenerator,
+        'tuple': CompositeGenerator
+    }
+
+    @classmethod
+    def create(cls, config):
+        data_type = config.get('type')
+        if not data_type:
+            return StaticValueGenerator(config)
+
+        if data_type not in cls.GENERATOR_MAP:
+            raise ValueError(f"未注册的类型: {data_type}")
+
+        return cls.GENERATOR_MAP[data_type](config)
+
+
+class SchemaLoader:
+
+    data_structure = {
+        "library_system": {
+            "type": "dict",
+            "fields": {
+                "book_detail": {
+                    "type": "dict",
+                    "fields": {
+                        "id": {"type": "int", "range": (100000, 999999)},
+                        "bianma": {"type": "str", "length": 10},
+                        "is_active": {"type": "bool"},
+                        "publication_year": {"type": "int", "range": (1800, 2025)},
+                        "genre": {
+                            "type": "str",
+                            "charset": [
+                                "Fiction", "Non-fiction", "Science", "History",
+                                "Biography", "Fantasy", "Mystery", "Romance"
+                            ],
+                            "length": 1
+                        },
+                        "availability": {"type": "bool"}
+                    }
+                },
+                "user_account": {
+                    "type": "dict",
+                    "fields": {
+                        "user_id": {"type": "int", "range": (100000, 999999)},
+                        "membership_start": {
+                            "type": "date",
+                            "start": "2015-01-01",
+                            "end": "2025-12-31"
+                        },
+                        "is_active": {"type": "bool"},
+                        "borrowed_books": {
+                            "type": "list",
+                            "element_type": {
+                                "type": "dict",
+                                "fields": {
+                                    "isbn": {"type": "str", "length": 13},
+                                    "borrow_date": {
+                                        "type": "date",
+                                        "start": "2020-01-01",
+                                        "end": "2025-12-31"
+                                    },
+                                    "return_date": {
+                                        "type": "date",
+                                        "start": "2020-01-01",
+                                        "end": "2026-12-31"
+                                    },
+                                    "is_returned": {"type": "bool"}
+                                }
+                            },
+                            "size": 5
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @classmethod
+    def load_schema(cls, schema_name):
+        return cls.data_structure.get(schema_name)
+
+
+class DataEngine:
+
+    def __init__(self):
+        self.factory = GeneratorFactory()
+        self.schema_loader = SchemaLoader()
+
+    def generate_dataset(self, schema_type="library_system"):
+        schema = self.schema_loader.load_schema(schema_type)
+        if not schema:
+            raise ValueError(f"无效的模式类型: {schema_type}")
+        return self._generate_nested(schema)
+
+    def _generate_nested(self, config):
+        if 'type' not in config:
+            return config
+
+        generator = self.factory.create(config)
+        return generator.generate()
+
+
+if __name__ == "__main__":
+    engine = DataEngine()
+    data = engine.generate_dataset()
+    print(data)
