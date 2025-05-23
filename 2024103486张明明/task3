@@ -1,0 +1,155 @@
+import random
+import string
+from datetime import datetime, timedelta
+import numpy as np
+from functools import wraps
+import json
+
+
+def count_decorator(*stats):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            result = func(self, *args, **kwargs)
+            leaf_nodes = self.get_leaf_nodes(result)
+            numeric_leaf_nodes = [leaf for leaf in leaf_nodes if isinstance(leaf['value'], (int, float))]
+            stats_result = {}
+            numeric_values = [leaf['value'] for leaf in numeric_leaf_nodes]
+            if numeric_values:
+                for stat in stats:
+                    if stat == 'mean':
+                        stats_result[stat] = np.mean(numeric_values)
+                    elif stat == 'variance':
+                        stats_result[stat] = np.var(numeric_values, ddof=0)
+                    elif stat == 'r_mse':
+                        stats_result[stat] = np.sqrt(np.var(numeric_values, ddof=0))
+                    elif stat == 'sum':
+                        stats_result[stat] = np.sum(numeric_values)
+            return result, stats_result
+        return wrapper
+    return decorator
+
+
+class DataSampler:
+    def __init__(self, random_generator=None):
+        self.random_generator = random_generator or random.SystemRandom()
+
+    def generate_value(self, value_def):
+        if "type" not in value_def:
+            return value_def
+
+        data_type = value_def["type"]
+        params = {k: v for k, v in value_def.items() if k != "type"}
+
+        if data_type == "int":
+            return self.random_generator.randint(*params["datarange"])
+        elif data_type == "float":
+            return round(self.random_generator.uniform(*params["datarange"]), 2)
+        elif data_type == "str":
+            length = params.get("len", 10)
+            datarange = params.get("datarange", string.ascii_letters + string.digits)
+            return ''.join(self.random_generator.choice(datarange) for _ in range(length))
+        elif data_type == "bool":
+            return self.random_generator.choice([True, False])
+        elif data_type == "date":
+            start = datetime.strptime(params["datarange"][0], "%Y-%m-%d")
+            end = datetime.strptime(params["datarange"][1], "%Y-%m-%d")
+            delta = end - start
+            random_days = self.random_generator.randint(0, delta.days)
+            return (start + timedelta(days=random_days)).strftime("%Y-%m-%d")
+        elif data_type == "list":
+            list_length = params.get("len", 3)
+            element_def = params["elements"]
+            return [self.generate_value(element_def) for _ in range(list_length)]
+        elif data_type == "tuple":
+            tuple_length = params.get("len", 3)
+            element_def = params["elements"]
+            return tuple(self.generate_value(element_def) for _ in range(tuple_length))
+        elif data_type == "dict":
+            return {k: self.generate_value(v) for k, v in params["subs"].items()}
+        else:
+            return None
+
+    def generate(self, **kwargs):
+        return {key: self.generate_value(value) for key, value in kwargs.items()}
+
+    @count_decorator('mean', 'variance', 'r_mse', 'sum')
+    def analyze(self, data):
+        return data
+
+    def get_leaf_nodes(self, data):
+        leaf_nodes = []
+
+        def traverse(value, path=""):
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    traverse(v, f"{path}.{k}" if path else k)
+            elif isinstance(value, list) or isinstance(value, tuple):
+                for idx, item in enumerate(value):
+                    traverse(item, f"{path}[{idx}]")
+            else:
+                leaf_nodes.append({"path": path, "value": value})
+
+        traverse(data)
+        return leaf_nodes
+
+
+if __name__ == "__main__":
+    data_structure = {
+        "id": {
+            "type": "int",
+            "datarange": (100000, 999999)
+        },
+        "create_date": {
+            "type": "date",
+            "datarange": ("2018-01-01", "2025-12-31")
+        },
+        "detail": {
+            "type": "dict",
+            "subs": {
+                "age": {
+                    "type": "int",
+                    "datarange": (18, 99)
+                },
+                "gender": {
+                    "type": "str",
+                    "datarange": ["M", "F"],
+                    "len": 1
+                }
+            }
+        },
+        "accounts": {
+            "type": "list",
+            "len": 2,
+            "elements": {
+                "type": "dict",
+                "subs": {
+                    "account_id": {
+                        "type": "int",
+                        "datarange": (1000000, 9999999)
+                    },
+                    "balance": {
+                        "type": "float",
+                        "datarange": (0.0, 1000000.0)
+                    },
+                    "transactions": {
+                        "type": "tuple",
+                        "len": 3,
+                        "elements": {
+                            "type": "float",
+                            "datarange": (-10000.0, 10000.0)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    sampler = DataSampler()
+    sample_dict = sampler.generate(**data_structure)
+    print("生成的数据:")
+    print(json.dumps(sample_dict, indent=2, ensure_ascii=False))  # 格式化输出
+
+    result, stats_result = sampler.analyze(sample_dict)
+    print("\n统计结果:")
+    print(json.dumps(stats_result, indent=2))
