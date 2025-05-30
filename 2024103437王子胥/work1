@@ -1,1 +1,37 @@
+import time
+import random
+
+# 创建10000 x 10000的矩阵（列表）
+list_matrix = []
+for row_index in range(10000):
+    row = [0] * 10000
+    list_matrix.append(row)
+
+# 创建10000 x 10000的矩阵（元组）
+tuple_matrix = tuple(tuple(0 for _ in range(10000)) for _ in range(10000))
+
+# 修改列表矩阵
+start_time_list = time.perf_counter()
+for iteration in range(10000):
+    i = random.randrange(10000)
+    j = random.randrange(10000)
+    list_matrix[i][j] = random.randint(1, 100)
+end_time_list = time.perf_counter()
+elapsed_list = end_time_list - start_time_list
+
+# 修改元组矩阵
+start_time_tuple = time.perf_counter()
+for iteration in range(10000):
+    i = random.randrange(10000)
+    j = random.randrange(10000)
+    modified_row = list(tuple_matrix[i])
+    modified_row[j] = random.randint(1, 100)
+    new_row = tuple(modified_row)
+    tuple_matrix = tuple_matrix[:i] + (new_row,) + tuple_matrix[i+1:]
+end_time_tuple = time.perf_counter()
+elapsed_tuple = end_time_tuple - start_time_tuple
+
+# 输出中文结果
+print(f"列表矩阵修改耗时: {elapsed_list:.2f} 秒")
+print(f"元组矩阵修改耗时: {elapsed_tuple:.2f} 秒")
 
