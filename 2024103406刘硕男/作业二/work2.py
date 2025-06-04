@@ -3,34 +3,6 @@ import string
 from typing import Any, Dict, List, Tuple, Union
 
 def generate_samples(**kwargs) -> List[Any]:
-    """
-    生成任意嵌套数据结构的随机样本集
-    
-    参数:
-        n (int): 样本数量
-        structure (Any): 描述所需数据结构的嵌套模板
-        depth_limit (int, optional): 最大嵌套深度，默认5
-        list_length (int, optional): 列表默认长度，默认3-10随机
-        str_length (int, optional): 字符串默认长度，默认5-15随机
-    
-    返回:
-        List[Any]: 生成的样本列表
-        
-    示例:
-        # 生成3个包含字典、列表和元组的嵌套结构样本
-        samples = generate_samples(
-            n=3,
-            structure={
-                "id": int,
-                "info": {
-                    "name": str,
-                    "tags": [str],
-                    "scores": (float, float)
-                },
-                "related": [[int]]
-            }
-        )
-    """
     # 获取参数并设置默认值
     n = kwargs.get('n', 1)
     structure = kwargs.get('structure')
