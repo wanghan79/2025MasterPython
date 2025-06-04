@@ -4,15 +4,6 @@ from collections.abc import Iterable
 from typing import Any, Callable, Dict, List, Tuple, Union
 
 def stats_decorator(stats: List[str] = ['SUM', 'AVG', 'VAR', 'RMSE']):
-    """
-    带参数的修饰器，用于统计样本集中的数值型数据
-    
-    参数:
-        stats (List[str]): 需要计算的统计项列表，可选值: 'SUM', 'AVG', 'VAR', 'RMSE'
-    
-    返回:
-        修饰后的函数，返回元组: (原始样本集, 统计结果字典)
-    """
     # 验证统计项参数
     valid_stats = {'SUM', 'AVG', 'VAR', 'RMSE'}
     if not set(stats).issubset(valid_stats):
