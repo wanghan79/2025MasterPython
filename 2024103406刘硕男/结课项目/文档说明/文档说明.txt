@@ -1,1 +1,26 @@
+一、代码实现目标
+  使用深度学习模型实现对猫狗图像的二分类（num_classes=2），通过不同网络结构的设计与优化，提升分类准确率。
 
+二、主要思路
+  定义多种卷积神经网络模型，通过特征提取和分类完成图像识别任务。具体如下：
+1. LeNet 基础模型
+结构：
+2 层卷积层（Conv2d）+ ReLU 激活函数，用于提取图像特征。
+2 层最大池化层（MaxPool2d），降低特征图尺寸。
+3 层全连接层（Linear），最后一层输出分类结果（num_classes=2）。
+特点：基础 CNN 架构，适用于小规模图像分类任务。
+2. AlexNet 及其改进版本
+原始 AlexNet
+结构：
+5 层卷积层（含大尺寸卷积核如 11x11），搭配 ReLU 激活和最大池化。
+3 层全连接层，使用 Dropout 防止过拟合。
+特点：经典图像分类架构，适合中等规模数据集。
+改进点
+引入注意力机制（CBAM）：
+在卷积层或池化层后添加 CBAM 模块，增强模型对关键特征的关注（如CBAMAlexNet系列）。
+替换卷积层为 Inception 模块：
+使用 Inception 结构（如InceptionModule11X11、InceptionA），通过多分支卷积提取多尺度特征，减少参数量（如LW_AlexNet、AlexNet1）。
+残差连接与归一化：
+添加残差连接（downsample）和 BatchNorm/GroupNorm 归一化层，提升训练稳定性（如AlexNet2、AlexNet_CBAM_4）。
+调整 Dropout 位置与比例：
+在全连接层前使用 Dropout，降低过拟合风险。
