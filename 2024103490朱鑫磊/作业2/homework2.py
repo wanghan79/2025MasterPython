@@ -1,46 +1,52 @@
 import random
 import string
-from typing import Any
 
-def random_value(value_type: type, int_range=(0, 100), float_range=(0.0, 1.0), str_length=8):
-    if value_type == int:
-        return random.randint(*int_range)
-    elif value_type == float:
-        return random.uniform(*float_range)
-    elif value_type == str:
-        return ''.join(random.choices(string.ascii_letters + string.digits, k=str_length))
-    else:
+def generate_random_value(dtype):
+    if dtype == int:
+        return random.randint(0, 100)
+    elif dtype == float:
+        return round(random.uniform(0, 100), 2)
+    elif dtype == str:
+        return ''.join(random.choices(string.ascii_letters, k=5))
+    elif dtype == bool:
+        return random.choice([True, False])
+    elif dtype == None:
         return None
+    else:
+        raise ValueError(f"Unsupported data type: {dtype}")
 
-def generate_sample(structure: Any, int_range, float_range, str_length):
-    if isinstance(structure, dict):
-        return {
-            key: generate_sample(val, int_range, float_range, str_length)
-            for key, val in structure.items()
-        }
-    elif isinstance(structure, list):
-        return [
-            generate_sample(val, int_range, float_range, str_length)
-            for val in structure
-        ]
+def generate_sample(structure):
+    if isinstance(structure, list):
+        return [generate_sample(sub) for sub in structure]
     elif isinstance(structure, tuple):
-        return tuple(
-            generate_sample(val, int_range, float_range, str_length)
-            for val in structure
-        )
-    elif structure in [int, float, str]:
-        return random_value(structure, int_range, float_range, str_length)
+        return tuple(generate_sample(sub) for sub in structure)
+    elif isinstance(structure, set):
+        return set(generate_sample(sub) for sub in structure)
+    elif isinstance(structure, dict):
+        return {k: generate_sample(v) for k, v in structure.items()}
+    elif isinstance(structure, type):
+        return generate_random_value(structure)
     else:
-        return None
+        raise TypeError(f"Invalid structure type: {type(structure)}")
 
-def generate_nested_samples(**kwargs):
+def generate_samples(**kwargs):
     structure = kwargs.get("structure")
     num_samples = kwargs.get("num_samples", 1)
-    int_range = kwargs.get("int_range", (0, 100))
-    float_range = kwargs.get("float_range", (0.0, 1.0))
-    str_length = kwargs.get("str_length", 8)
+    if structure is None:
+        raise ValueError("You must provide a 'structure' keyword argument.")
+    return [generate_sample(structure) for _ in range(num_samples)]
 
-    return [
-        generate_sample(structure, int_range, float_range, str_length)
-        for _ in range(num_samples)
-    ]
+if __name__ == "__main__":
+    structure_template = {
+        "id": int,
+        "info": {
+            "name": str,
+            "scores": [float, float, float],
+            "tags": {"tag1": str, "tag2": str}
+        },
+        "flags": (bool, bool),
+    }
+
+    samples = generate_samples(structure=structure_template, num_samples=5)
+    for i, sample in enumerate(samples, 1):
+        print(f"Sample {i}:\n{sample}\n")
