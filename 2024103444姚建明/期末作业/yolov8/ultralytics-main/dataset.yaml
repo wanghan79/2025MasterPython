@@ -1,0 +1,9 @@
+# 训练和验证数据路径
+train: D:/Project/working/yolov8/ultralytics-main/dataset/images/train
+val: D:/Project/working/yolov8/ultralytics-main/dataset/images/test
+
+# 类别数量
+nc: 1  # 假设只有一个类别
+
+# 类别名称
+names: ['barcode']  # 类别名称列表
