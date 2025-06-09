@@ -1,0 +1,51 @@
+import random
+import string
+
+def random_str(length=6):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+def generate_random_value(dtype):
+    if dtype == 'int':
+        return random.randint(0, 100)
+    elif dtype == 'float':
+        return round(random.uniform(0, 100), 2)
+    elif dtype == 'str':
+        return random_str()
+    elif dtype == 'bool':
+        return random.choice([True, False])
+    else:
+        raise ValueError(f"Unsupported type: {dtype}")
+
+def generate_structure(template):
+    if isinstance(template, dict):
+        return {k: generate_structure(v) for k, v in template.items()}
+    elif isinstance(template, list):
+        return [generate_structure(v) for v in template]
+    elif isinstance(template, tuple):
+        return tuple(generate_structure(v) for v in template)
+    elif isinstance(template, str):
+        return generate_random_value(template)
+    else:
+        raise TypeError(f"Unsupported type: {type(template)}")
+
+def generate_samples(sample_num=1, **kwargs):
+    template = kwargs.get('structure')
+    if not template:
+        raise ValueError("Please provide a 'structure' argument in kwargs.")
+    return [generate_structure(template) for _ in range(sample_num)]
+
+
+if __name__ == "__main__":
+    struct_template = {
+        'user_id': 'int',
+        'profile': {
+            'name': 'str',
+            'score': 'float'
+        },
+        'tags': ['str', 'str'],
+        'active': ('bool', 'int')
+    }
+
+    samples = generate_samples(sample_num=5, structure=struct_template)
+    for i, s in enumerate(samples):
+        print(f"Sample {i + 1}:\n{s}\n")
