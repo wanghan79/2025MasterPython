@@ -14,11 +14,9 @@
     8. 主程序：命令行接口，解析参数，支持训练/生成/评估/分析四种模式。
 
 目录结构（单文件）：
-    - imports
-    - 常量与配置
-    - 数据相关（Dataset与DataLoader封装、拆分函数）
-    - 模型定义（Encoder、Decoder、VAE）
-    - 训练器（Trainer，含进度条与可视化）
-    - 生成与评估（Generator, Evaluator）
-    - 工具函数（utils：load_pdb、save_pdb、Kabsch算法、绘图等）
-    - 主函数（main）
+    config.py 作为全局配置中心，管理硬件选择、文件路径、模型超参数和日志系统；
+    data.py 负责数据加载和预处理，包括从 PDB/FASTA 文件提取结构信息，并转换为图表示；
+    model.py 定义神经网络架构，其中包含 VAE 编码器、解码器及其重参数化技巧；
+    train.py 处理模型训练流程，通过 Trainer 类管理训练循环、验证和损失计算，同时可视化损失曲线；generate_eval.py 负责构象生成与质量评估，包括从潜在空间生成新构象并计算 RMSD 等评估指标；
+    utils.py 提供基础工具函数，如 PDB 文件解析、坐标转换和文件操作；
+    main.py 作为程序入口，解析命令行参数，调用训练、生成或评估模块，管理整体工作流程。
