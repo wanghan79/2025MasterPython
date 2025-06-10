@@ -1,0 +1,20 @@
+# 基础依赖
+numpy>=1.21.0
+opencv-python>=4.5.0
+pyzmq>=22.0.0
+requests>=2.26.0
+
+# 图像处理
+Pillow>=8.3.0
+
+# 日志和工具
+python-json-logger>=2.0.0
+tqdm>=4.62.0
+
+# 语音处理
+whisper>=1.0.0
+
+# 开发工具
+pytest>=6.2.0
+black>=21.7b0
+flake8>=3.9.0 
