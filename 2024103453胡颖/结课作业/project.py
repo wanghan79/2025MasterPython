@@ -11,9 +11,21 @@ STANDARD_AMINO_ACIDS = {
 # 结构体用于存储解析后的原子数据
 class Atom:
     """表示PDB文件中的一个原子。"""
-    def __init__(self, record_type, atom_serial_number, atom_name, alt_loc,
-                 residue_name, chain_id, residue_sequence_number, insertion_code,
-                 x, y, z, occupancy, b_factor, segment_id, element_symbol, charge):
+    def __init__(self, record_type, 
+                 atom_serial_number, 
+                 atom_name, alt_loc,
+                 residue_name, 
+                 chain_id, 
+                 residue_sequence_number, 
+                 insertion_code,
+                 x, 
+                 y, 
+                 z, 
+                 occupancy, 
+                 b_factor, 
+                 segment_id, 
+                 element_symbol, 
+                 charge):
         self.record_type = record_type
         self.atom_serial_number = int(atom_serial_number)
         self.atom_name = atom_name.strip()
@@ -32,9 +44,11 @@ class Atom:
         self.charge = charge.strip()
 
     def __repr__(self):
-        return (f"Atom(name='{self.atom_name}', res='{self.residue_name}', "
-                f"res_seq={self.residue_sequence_number}, chain='{self.chain_id}', "
-                f"coords=({self.x:.2f},{self.y:.2f},{self.z:.2f}))")
+        return (f"Atom(name='{self.atom_name}', 
+                res='{self.residue_name}', 
+                "f"res_seq={self.residue_sequence_number}, 
+                chain='{self.chain_id}', 
+                "f"coords=({self.x:.2f},{self.y:.2f},{self.z:.2f}))")
 
 # 结构体用于存储解析后的残基数据
 class Residue:
