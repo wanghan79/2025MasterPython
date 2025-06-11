@@ -56,7 +56,7 @@ class DataSampler:
 
 def generate_random_samples(**structure):
 
-    num_samples = random.randint(1, 100)  # 随机生成 1~10 个样本
+    num_samples = random.randint(1, 100)  # 随机生成 1~100 个样本
     sampler = DataSampler(num_samples)
     return sampler.generate_samples(**structure)
 
