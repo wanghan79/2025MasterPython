@@ -1,4 +1,3 @@
-# stats_decorator_analysis.py
 import random
 import string
 import math
