@@ -1,44 +1,61 @@
 import random
 import string
-from datetime import datetime, timedelta
 import numpy as np
+from datetime import datetime, timedelta
+from uuid import uuid4
 from functools import wraps
 
-
-# 定义统计修饰器
-def stats_on_sample_decorator(*stats_to_calculate):
-    def decorator(func_to_decorate):
-        @wraps(func_to_decorate)
-        def wrapper(sampler_instance, data_sample, *args, **kwargs):
-            processed_data = func_to_decorate(sampler_instance, data_sample, *args, **kwargs)
-            leaf_nodes = sampler_instance.get_leaf_nodes(processed_data)
-            numeric_leaf_nodes = [leaf for leaf in leaf_nodes if isinstance(leaf['value'], (int, float))]
-
-            # 初始化统计结果字典
-            stats_result = {}
-
-            # 按指定的统计量进行计算
-            numeric_values = [leaf['value'] for leaf in numeric_leaf_nodes]
-            if numeric_values:
-                for stat_name in stats_to_calculate:
-                    if stat_name == 'mean':
-                        stats_result[stat_name] = np.mean(numeric_values)
-                    elif stat_name == 'variance':
-                        stats_result[stat_name] = np.var(numeric_values, ddof=0)  # 总体方差
-                    elif stat_name == 'rmse':
-                        stats_result[stat_name] = np.sqrt(np.var(numeric_values, ddof=0))
-                    elif stat_name == 'sum':
-                        stats_result[stat_name] = np.sum(numeric_values)
+# 带参数的统计修饰器
+def stats_decorator(*stats_to_calculate):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # 调用原始函数获取样本
+            samples = func(*args, **kwargs)
 
 
-            # 返回原始结果和统计结果
-            return processed_data, stats_result
+            def collect_numeric_values(data, path=""):
+                numeric_values = []
+                if isinstance(data, dict):
+                    for k, v in data.items():
+                        new_path = f"{path}.{k}" if path else k
+                        numeric_values.extend(collect_numeric_values(v, new_path))
+                elif isinstance(data, (list, tuple)):
+                    for i, item in enumerate(data):
+                        new_path = f"{path}[{i}]"
+                        numeric_values.extend(collect_numeric_values(item, new_path))
+                elif isinstance(data, (int, float)):
+                    numeric_values.append((path, data))
+                return numeric_values
+
+            # 遍历所有样本进行统计分析
+            for sample in samples:
+
+                numeric_values = collect_numeric_values(sample)
+
+                # 计算统计量
+                stats_result = {}
+                if numeric_values:
+                    values = [v for _, v in numeric_values]
+
+                    if 'sum' in stats_to_calculate:
+                        stats_result['sum'] = np.sum(values)
+                    if 'avg' in stats_to_calculate:
+                        stats_result['avg'] = np.mean(values)
+                    if 'var' in stats_to_calculate:
+                        stats_result['var'] = np.var(values)
+                    if 'rmse' in stats_to_calculate:
+                        stats_result['rmse'] = np.sqrt(np.mean(np.square(values)))
+
+                # 将统计结果添加到样本中
+                sample['_stats'] = stats_result
+
+            return samples
         return wrapper
     return decorator
 
-
 class DataSampler:
-    def __init__(self, num_samples=5):
+    def __init__(self, num_samples=1):
         self.num_samples = num_samples
 
     def random_value(self, data_type, data_range=None):
@@ -51,9 +68,9 @@ class DataSampler:
         elif data_type == bool:
             return random.choice([True, False])
         elif data_type == list:
-            return [self.random_value(data_range['type'], data_range.get('range')) for _ in range(data_range['length'])]
+            return [self.random_value(data_range['type'], data_range['range']) for _ in range(data_range['length'])]
         elif data_type == tuple:
-            return tuple(self.random_value(data_range['type'], data_range.get('range')) for _ in range(data_range['length']))
+            return tuple(self.random_value(data_range['type'], data_range['range']) for _ in range(data_range['length']))
         elif data_type == dict:
             return self.generate_structure(data_range)
         elif data_type == 'date':
@@ -61,61 +78,47 @@ class DataSampler:
             end_date = data_range[1]
             random_days = random.randint(0, (end_date - start_date).days)
             return start_date + timedelta(days=random_days)
+        elif data_type == 'uuid':
+            return str(uuid4())
         else:
-            return None
+            raise ValueError(f"Unsupported data type: {data_type}")
 
     def generate_structure(self, structure):
         if isinstance(structure, dict):
             node = {}
-            for k, v_def in structure.items():
-                if isinstance(v_def, dict):
-                    data_type = v_def.get('type')
-                    data_range_param = v_def.get('range')
-                    subs_param = v_def.get('subs', [])
-
-                    if isinstance(subs_param, list) and subs_param:
-                        node[k] = [self.generate_structure(sub_struct) for sub_struct in subs_param]
+            for k, v in structure.items():
+                if isinstance(v, dict):
+                    data_type = v.get('type')
+                    data_range = v.get('range')
+                    subs = v.get('subs', [])
+                    if isinstance(subs, list) and subs:
+                        node[k] = [self.generate_structure(sub) for sub in subs]
                     else:
-                        node[k] = self.random_value(data_type, data_range_param)
+                        node[k] = self.random_value(data_type, data_range)
                 else:
-                    raise ValueError(f"Field definition for '{k}' must be a dictionary.")
+                    raise ValueError("Expected dictionary structure")
             return node
         else:
-            raise ValueError("Initial structure to generate_structure must be a dictionary.")
+            raise ValueError("Unsupported structure")
 
-    def generate_samples(self, structure):
-        self.generated_samples = [self.generate_structure(structure) for _ in range(self.num_samples)]
-        return self.generated_samples
-
-
-    def get_leaf_nodes(self, data, current_path=""):
-        """
-        递归获取数据结构中的所有叶节点，并返回包含叶节点信息的列表。
-        """
-        leaf_nodes = []
-        if isinstance(data, dict):
-            for k, v_item in data.items():
-                new_path = f"{current_path}.{k}" if current_path else k
-                leaf_nodes.extend(self.get_leaf_nodes(v_item, new_path))
-        elif isinstance(data, (list, tuple)):
-            for i, item in enumerate(data):
-                new_path = f"{current_path}[{i}]"
-                leaf_nodes.extend(self.get_leaf_nodes(item, new_path))
-        else:
-            leaf_nodes.append({"path": current_path, "value": data})
-        return leaf_nodes
-
-    @stats_on_sample_decorator('mean', 'variance', 'rmse', 'sum')
-    def analyze_sample(self, sample_data):
-        return sample_data
+    def generate_samples(self, **structure):
+        return [self.generate_structure(structure) for _ in range(self.num_samples)]
 
 
+@stats_decorator('sum', 'avg', 'var', 'rmse')  # 可以自由组合统计项
+def generate_random_samples(**structure):
+    num_samples = random.randint(1, 100)  # 随机生成 1~100 个样本
+    sampler = DataSampler(num_samples)
+    return sampler.generate_samples(**structure)
+
+
+# 示例调用
 if __name__ == "__main__":
-    data_structure_def = {
-        'name': {'type': str, 'range': 5},
-        'age': {'type': int, 'range': (0, 100)},
-        'height': {'type': float, 'range': (0.0, 200.0)},
-        'favorites': {
+    samples = generate_random_samples(
+        name={'type': str, 'range': 5},
+        age={'type': int, 'range': (0, 100)},
+        height={'type': float, 'range': (0.0, 200.0)},
+        favorites={
             'type': dict,
             'subs': [
                 {'colors': {'type': list, 'range': {'type': str, 'range': 5, 'length': 3}}},
@@ -125,20 +128,18 @@ if __name__ == "__main__":
                 {'tags': {'type': tuple, 'range': {'type': str, 'range': 4, 'length': 3}}}
             ]
         },
-        'subject': {'type': str, 'range': 10},
-        'state': {'type': bool},
-        'date': {'type': 'date', 'range': [datetime(2020, 1, 1), datetime(2023, 12, 31)]}
-    }
+        subject={'type': str, 'range': 10},
+        state={'type': bool},
+        date={'type': 'date', 'range': [datetime(2020, 1, 1), datetime(2023, 12, 31)]},
+        user_id={'type': 'uuid'}
+    )
 
-    sampler = DataSampler(num_samples=5)
-    generated_samples_list = sampler.generate_samples(data_structure_def)
-
-    print("生成的样本及各自的统计分析:")
-    for i, sample_item in enumerate(generated_samples_list):
-        print(f"\n--- 样本 {i+1} ---")
-        analyzed_data, sample_stats = sampler.analyze_sample(sample_item)
-
-        print("原始数据:")
-        print(analyzed_data)
-        print("该样本的统计结果 (针对所有数值型叶节点):")
-        print(sample_stats)
+    print(f"\n生成的 {len(samples)} 个样本及其统计信息:")
+    for i, sample in enumerate(samples, 1):
+        print(f"\n样本 {i}:")
+        # 打印原始数据（排除统计结果）
+        for k, v in sample.items():
+            if k != '_stats':
+                print(f"{k}: {v}")
+        # 打印统计结果
+        print("统计结果:", sample.get('_stats', {}))

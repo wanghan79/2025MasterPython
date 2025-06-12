@@ -1,0 +1,51 @@
+import math
+
+class StatisticsDecorator:
+    def __init__(self, stats):
+        self.stats = set(stats)
+        self.valid_stats = {'SUM', 'AVG', 'VAR', 'RMSE'}
+
+    def __call__(self, func):
+        if not self.stats.issubset(self.valid_stats):
+            raise ValueError
+        
+        def wrapper(*args, **kwargs):
+            samples = func(*args, **kwargs)
+            
+            values = []
+            stack = [samples]
+            while stack:
+                current = stack.pop()
+                if isinstance(current, (list, tuple)):
+                    stack.extend(current)
+                elif isinstance(current, dict):
+                    stack.extend(current.values())
+                elif isinstance(current, (int, float)):
+                    values.append(current)
+            
+            n = len(values)
+            if n == 0:
+                return {}
+            
+            s = sum(values)
+            avg_val = s / n
+            
+            results = {}
+            if 'SUM' in self.stats:
+                results['SUM'] = s
+            if 'AVG' in self.stats:
+                results['AVG'] = avg_val
+            if 'VAR' in self.stats or 'RMSE' in self.stats:
+                variance = sum((x - avg_val) ** 2 for x in values) / n
+                if 'VAR' in self.stats:
+                    results['VAR'] = variance
+                if 'RMSE' in self.stats:
+                    results['RMSE'] = math.sqrt(variance)
+            
+            return results
+        return wrapper
+
+@StatisticsDecorator(stats=('SUM', 'AVG', 'RMSE'))
+def generate_samples(**kwargs):
+    pass
+

@@ -1,0 +1,11 @@
+项目文档说明
+项目目标:
+构建一个基于深度学习（ResEmoteNet模型）的图像分类系统，实现以下核心功能：
+训练和验证深度神经网络模型（ResEmoteNet）对Three4All数据集（图像分类任务）进行处理和分类实现完整的训练-验证-测试流程应用早停机制优化训练过程
+记录并分析训练过程指标代码结构概述
+
+文件 功能描述:
+ResEmoteNet_train.py 主训练脚本，包含完整训练流程、验证和早停机制
+get_dataset.py 自定义数据集类（Four4All），实现数据加载和预处理
+test.py 模型测试脚本，加载最佳模型进行最终评估
+approach/ResEmoteNet.py ResEmoteNet模型实现（未展示）

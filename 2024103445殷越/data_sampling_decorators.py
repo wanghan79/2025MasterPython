@@ -42,18 +42,29 @@ def extract_field_values(obj: Any, field_path: str = '') -> Dict[str, List[float
             result.update(extract_field_values(value, new_path))
     elif isinstance(obj, (list, tuple)):
         for i, item in enumerate(obj):
-            new_path = f"{field_path}[{i}]" if field_path else f"[{i}]"
+            new_path = f"{field_path}[{i}]" if field_path else f"[{i}]" 
             result.update(extract_field_values(item, new_path))
     
     return result
 
-def statistical_decorator(stat_type: Literal['mean', 'variance', 'rmse', 'sum'] = 'mean'):
+def statistical_decorator(stat_types: Union[str, List[str]] = 'mean'):
     """
-    统一的统计装饰器，通过参数控制不同的统计功能
+    统一的统计装饰器，支持不同统计方式的任意组合
     
     Args:
-        stat_type: 统计类型，可选值：'mean', 'variance', 'rmse', 'sum'
+        stat_types: 统计类型，可以是单个字符串或字符串列表
+                   可选值：'mean', 'variance', 'rmse', 'sum'
     """
+    # 如果传入的是单个字符串，转换为列表
+    if isinstance(stat_types, str):
+        stat_types = [stat_types]
+    
+    # 验证所有统计类型都是支持的
+    supported_types = {'mean', 'variance', 'rmse', 'sum'}
+    for stat_type in stat_types:
+        if stat_type not in supported_types:
+            raise ValueError(f"Unsupported statistical type: {stat_type}")
+    
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -69,23 +80,27 @@ def statistical_decorator(stat_type: Literal['mean', 'variance', 'rmse', 'sum'] 
                         field_values[field] = []
                     field_values[field].extend(values)
             
-            # 对每个字段进行统计
+            # 对每个统计类型和每个字段进行统计
             stats = {}
-            for field, values in field_values.items():
-                if not values:
-                    stats[field] = None
-                    continue
-                    
-                if stat_type == 'mean':
-                    stats[field] = float(np.mean(values))
-                elif stat_type == 'variance':
-                    stats[field] = float(np.var(values))
-                elif stat_type == 'rmse':
-                    stats[field] = float(np.sqrt(np.mean(np.square(values))))
-                elif stat_type == 'sum':
-                    stats[field] = float(np.sum(values))
-                else:
-                    raise ValueError(f"Unsupported statistical type: {stat_type}")
+            for stat_type in stat_types:
+                stats[stat_type] = {}
+                for field, values in field_values.items():
+                    if not values:
+                        stats[stat_type][field] = None
+                        continue
+                        
+                    if stat_type == 'mean':
+                        stats[stat_type][field] = float(np.mean(values))
+                    elif stat_type == 'variance':
+                        stats[stat_type][field] = float(np.var(values))
+                    elif stat_type == 'rmse':
+                        stats[stat_type][field] = float(np.sqrt(np.mean(np.square(values))))
+                    elif stat_type == 'sum':
+                        stats[stat_type][field] = float(np.sum(values))
+            
+            # 如果只有一种统计类型，直接返回该类型的结果
+            if len(stat_types) == 1:
+                return stats[stat_types[0]]
             
             return stats
         return wrapper
@@ -93,25 +108,23 @@ def statistical_decorator(stat_type: Literal['mean', 'variance', 'rmse', 'sum'] 
 
 # 示例使用
 if __name__ == "__main__":
-    # 示例1：生成随机整数并计算不同统计量
-    @statistical_decorator(stat_type='mean')
+    # 示例1：单一统计类型
+    @statistical_decorator(stat_types='mean')
     def generate_random_numbers_mean(num_samples: int = 5):
         return sample_generator(num_samples, value=int)
     
-    @statistical_decorator(stat_type='variance')
-    def generate_random_numbers_var(num_samples: int = 5):
+    # 示例2：多种统计类型组合
+    @statistical_decorator(stat_types=['mean', 'variance', 'sum'])
+    def generate_random_numbers_multi(num_samples: int = 5):
         return sample_generator(num_samples, value=int)
     
-    @statistical_decorator(stat_type='rmse')
-    def generate_random_numbers_rmse(num_samples: int = 5):
+    # 示例3：所有统计类型
+    @statistical_decorator(stat_types=['mean', 'variance', 'rmse', 'sum'])
+    def generate_random_numbers_all(num_samples: int = 5):
         return sample_generator(num_samples, value=int)
     
-    @statistical_decorator(stat_type='sum')
-    def generate_random_numbers_sum(num_samples: int = 5):
-        return sample_generator(num_samples, value=int)
-    
-    # 示例2：生成复杂对象并计算统计量
-    @statistical_decorator(stat_type='mean')
+    # 示例4：复杂对象的多种统计
+    @statistical_decorator(stat_types=['mean', 'variance'])
     def generate_complex_objects(num_samples: int = 5):
         return sample_generator(
             num_samples,
@@ -125,8 +138,18 @@ if __name__ == "__main__":
         )
     
     # 测试代码
-    print("Mean of random numbers:", generate_random_numbers_mean(5))
-    print("Variance of random numbers:", generate_random_numbers_var(5))
-    print("RMSE of random numbers:", generate_random_numbers_rmse(5))
-    print("Sum of random numbers:", generate_random_numbers_sum(5))
-    print("\nComplex objects mean:", generate_complex_objects(3)) 
+    print("Single stat (mean):", generate_random_numbers_mean(5))
+    print("\nMultiple stats (mean, variance, sum):")
+    result_multi = generate_random_numbers_multi(5)
+    for stat_type, values in result_multi.items():
+        print(f"  {stat_type}: {values}")
+    
+    print("\nAll stats:")
+    result_all = generate_random_numbers_all(5)
+    for stat_type, values in result_all.items():
+        print(f"  {stat_type}: {values}")
+    
+    print("\nComplex objects (mean, variance):")
+    result_complex = generate_complex_objects(3)
+    for stat_type, values in result_complex.items():
+        print(f"  {stat_type}: {values}") 

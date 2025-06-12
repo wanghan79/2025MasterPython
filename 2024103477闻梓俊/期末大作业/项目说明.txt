@@ -1,0 +1,4 @@
+训练模型：
+python train.py --dataroot ./datasets/maps --name maps_cyclegan --model cycle_gan
+测试模型：
+python test.py --dataroot ./datasets/maps --name maps_cyclegan --model cycle_gan
