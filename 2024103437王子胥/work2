@@ -1,0 +1,98 @@
+import random
+import string
+import datetime
+
+def random_str(length=6):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+def random_date(start=datetime.date(2000, 1, 1), end=datetime.date(2030, 12, 31)):
+    delta = (end - start).days
+    return str(start + datetime.timedelta(days=random.randint(0, delta)))
+
+def random_value(spec):
+    dtype = spec.get("type")
+    rule = spec.get("rule")
+
+    if dtype == "int":
+        return random.randint(*rule) if rule else random.randint(0, 100)
+    elif dtype == "float":
+        return round(random.uniform(*rule), 2) if rule else round(random.uniform(0, 100), 2)
+    elif dtype == "str":
+        length = rule if isinstance(rule, int) else 6
+        return random_str(length)
+    elif dtype == "bool":
+        return random.choice([True, False])
+    elif dtype == "date":
+        start = rule[0] if rule else datetime.date(2010, 1, 1)
+        end = rule[1] if rule else datetime.date(2030, 12, 31)
+        return random_date(start, end)
+    elif dtype == "list":
+        length = spec.get("length", 3)
+        item_spec = spec.get("item")
+        return [random_value(item_spec) for _ in range(length)]
+    elif dtype == "tuple":
+        items = spec.get("items", [])
+        return tuple(random_value(item) for item in items)
+    elif dtype == "dict":
+        subs = spec.get("subs", {})
+        return {k: random_value(v) for k, v in subs.items()}
+    else:
+        raise ValueError(f"Unsupported type: {dtype}")
+
+def generate_samples(num=1, **kwargs):
+    """
+    生成结构化的随机测试数据
+
+    参数:
+        num: 样本个数
+        kwargs: 包含结构定义，必须传入 'structure' 参数
+
+    返回:
+        包含 num 个样本的列表
+    """
+    structure = kwargs.get("structure")
+    if not structure:
+        raise ValueError("Missing 'structure' definition in kwargs")
+
+    samples = []
+    for _ in range(num):
+        sample = random_value({"type": "dict", "subs": structure})
+        samples.append(sample)
+    return samples
+
+# 示例运行
+if __name__ == "__main__":
+    schema = {
+        "user_id": {"type": "int", "rule": (1000, 9999)},
+        "username": {"type": "str", "rule": 8},
+        "age": {"type": "int", "rule": (18, 60)},
+        "registered": {"type": "bool"},
+        "created_at": {"type": "date", "rule": [datetime.date(2020, 1, 1), datetime.date(2024, 12, 31)]},
+        "profile": {
+            "type": "dict",
+            "subs": {
+                "email": {"type": "str", "rule": 10},
+                "height": {"type": "float", "rule": (150.0, 200.0)},
+                "hobbies": {
+                    "type": "list",
+                    "item": {"type": "str", "rule": 5},
+                    "length": 3
+                }
+            }
+        },
+        "history": {
+            "type": "tuple",
+            "items": [
+                {"type": "int", "rule": (1, 10)},
+                {"type": "str", "rule": 4},
+                {"type": "bool"}
+            ]
+        }
+    }
+
+    print("生成的模拟样本数据：\n")
+    results = generate_samples(num=3, structure=schema)
+    for i, res in enumerate(results, 1):
+        print(f"--- Sample {i} ---")
+        print(res)
+        print()
