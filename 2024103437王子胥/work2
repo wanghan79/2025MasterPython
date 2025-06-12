@@ -40,16 +40,7 @@ def random_value(spec):
         raise ValueError(f"Unsupported type: {dtype}")
 
 def generate_samples(num=1, **kwargs):
-    """
-    生成结构化的随机测试数据
 
-    参数:
-        num: 样本个数
-        kwargs: 包含结构定义，必须传入 'structure' 参数
-
-    返回:
-        包含 num 个样本的列表
-    """
     structure = kwargs.get("structure")
     if not structure:
         raise ValueError("Missing 'structure' definition in kwargs")
@@ -60,7 +51,7 @@ def generate_samples(num=1, **kwargs):
         samples.append(sample)
     return samples
 
-# 示例运行
+
 if __name__ == "__main__":
     schema = {
         "user_id": {"type": "int", "rule": (1000, 9999)},
