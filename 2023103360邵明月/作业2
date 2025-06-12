@@ -1,1 +1,44 @@
+import random
+import string
 
+def generate_random_value(data_type):
+    if data_type == 'int':
+        return random.randint(0, 100)
+    elif data_type == 'float':
+        return random.uniform(0, 100)
+    elif data_type == 'str':
+        return ''.join(random.choices(string.ascii_letters, k=5))
+    elif data_type == 'bool':
+        return random.choice([True, False])
+    return None
+
+def generate_sample(structure):
+    if isinstance(structure, tuple):
+        container_type = structure[0]
+        content_structure = structure[1]
+        if container_type == 'list':
+            return [generate_sample(content_structure) for _ in range(random.randint(1, 5))]
+        elif container_type == 'dict':
+            return {k: generate_sample(content_structure) for k in ['key1', 'key2']}
+        elif container_type == 'set':
+            return {generate_sample(content_structure) for _ in range(random.randint(1, 5))}
+        elif container_type == 'tuple':
+            return tuple(generate_sample(content_structure) for _ in range(random.randint(1, 5)))
+    return generate_random_value(structure)
+
+def generate_nested_samples(**kwargs):
+    samples = []
+    for _ in range(kwargs.get('count', 1)):
+        sample = {}
+        for key, structure in kwargs.items():
+            if key != 'count':
+                sample[key] = generate_sample(structure)
+        samples.append(sample)
+    return samples
+
+sample = generate_nested_samples(
+    count=3,
+    structure=('list', ('tuple', ('dict', 'int'))),
+    value='str'
+)
+print(sample)
