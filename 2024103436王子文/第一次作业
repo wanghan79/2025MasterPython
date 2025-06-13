@@ -1,69 +1,52 @@
 import time
+import random
 
-def create_list(n):
-    result = []
-    for i in range(n):
-        row = []
-        for j in range(n):
-            row.append(0)
-        result.append(row)
-    return result
 
-def create_tuple(n):
-    result = []
-    for i in range(n):
-        row = []
-        for j in range(n):
-            row.append(0)
-        result.append(tuple(row))
-    return tuple(result)
+ROWS = 10000
+COLS = 10000
+MODIFICATIONS = 10000
 
-def update_list(data, count):
-    length = len(data)
-    for i in range(count):
-        r = i % length
-        c = (i * 7) % length
-        temp = []
-        for val in data[r]:
-            temp.append(val)
-        temp[c] = 1
-        data[r] = temp
 
-def update_tuple(data, count):
-    length = len(data)
-    for i in range(count):
-        r = i % length
-        c = (i * 7) % length
-        new_data = []
-        for x in range(length):
-            row = []
-            for y in range(length):
-                if x == r and y == c:
-                    row.append(1)
-                else:
-                    row.append(data[x][y])
-            new_data.append(tuple(row))
-        data = tuple(new_data)
+print("Creating list matrix...")
+list_matrix = [[0] * COLS for _ in range(ROWS)]
 
-def run():
-    n = 10000
-    t = 10000
-    print("测试")
-    print("矩阵大小", n, "，修改次数", t)
 
-    s1 = time.time()
-    a = create_list(n)
-    update_list(a, t)
-    e1 = time.time()
-    print("列表修改用了", round(e1 - s1, 4), "秒")
+print("Starting list modifications...")
+start_time = time.time()
+for _ in range(MODIFICATIONS):
+    i = random.randint(0, ROWS - 1)
+    j = random.randint(0, COLS - 1)
+    list_matrix[i][j] = 1 
+list_time = time.time() - start_time
+print(f"List modification time: {list_time:.4f} seconds")
 
-    s2 = time.time()
-    b = create_tuple(n)
-    update_tuple(b, t)
-    e2 = time.time()
-    print("元组修改用了", round(e2 - s2, 4), "秒")
 
-    print("元组修改是列表的", round((e2 - s2) / (e1 - s1), 1), "倍")
+print("Creating tuple matrix...")
+tuple_matrix = tuple(tuple(0 for _ in range(COLS)) for _ in range(ROWS))
 
-if __name__ == "__main__":
-    run()
+
+print("Starting tuple modifications...")
+start_time = time.time()
+
+temp_matrix = list(tuple_matrix)
+for _ in range(MODIFICATIONS):
+    i = random.randint(0, ROWS - 1)
+    j = random.randint(0, COLS - 1)
+
+   
+    row_list = list(temp_matrix[i])
+    row_list[j] = 1
+    new_row = tuple(row_list)
+
+
+    temp_matrix[i] = new_row
+
+
+tuple_matrix = tuple(temp_matrix)
+tuple_time = time.time() - start_time
+print(f"Tuple modification time: {tuple_time:.4f} seconds")
+
+
+print("\nPerformance Comparison:")
+print(f"List was {tuple_time / list_time:.1f}x faster than tuple")
+print(f"List time: {list_time:.4f} sec\nTuple time: {tuple_time:.4f} sec")
