@@ -1,0 +1,169 @@
+optimizer: adam
+optimizer_params: {'learning_rate': 0.001}
+begin_epoch: 0
+end_epoch: 20
+batch_size: 16
+ctx: gpu(0)
+save_epoch: 1
+view_tag: False
+train_select: None
+save_select: None
+ku_num_dict: {'junyi': 835, 'junyi_50': 835, 'junyi_80': 835, 'junyi_long': 835, 'junyi_large': 835, 'junyi_session': 835, 'ifly': 945, 'simirt': 10, 'irt': 10, 'kss': 10, 'assistments12': 265, 'assistments': 124, 'assistments100': 124, 'a0910c': 146, 'a0910c100': 146, 'a0910c100loop': 146}
+hidden_num_dict: {'junyi': 900, 'junyi_50': 900, 'junyi_80': 900, 'junyi_long': 900, 'junyi_large': 900, 'junyi_session': 900, 
+'ifly': 1000, 'simirt': 20, 'irt': 20, 'kss': 20, 'assistments': 200, 'assistments100': 200, 'assistments12': 375, 'a0910c': 200, 'a0910c100': 200, 'a0910c100loop': 200}
+latent_dim_dict: {'junyi': 600, 'junyi_50': 600, 'junyi_80': 600, 'junyi_long': 600, 'junyi_large': 600, 'junyi_session': 600, 
+'ifly': 650, 'simirt': 15, 'irt': 15, 'kss': 15, 'assistments': 75, 'assistments100': 75, 'assistments12': 115, 'a0910c': 85, 'a0910c100': 85, 'a0910c100loop': 85}
+num_buckets: 100
+validation_result_file: e:\paper\Env_Extra\Env_Extra\data\junyi\EmbedDKT\result.json
+ku_num: 835
+hidden_num: 900
+latent_dim: 600
+EmbedDKT, INFO generating symbol
+EmbedDKT, INFO loading data
+reading data: 60094it [00:01, 54785.33it/s]
+batchify: 100%|█████████████████████████████████████████████████████████████████████████| 3803/3803 [00:01<00:00, 2006.40it/s]
+reading data: 15133it [00:00, 57094.23it/s]
+batchify: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [00:00<00:00, 1957.27it/s]
+EmbedDKT, INFO start training
+EmbedDKT, INFO model doesn't exist, initializing
+EmbedDKT, INFO start training
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    0|      19           3802         nan     0.27834787201356343
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:02<00:00, 15.92it/s] 
+Epoch [0]:      Train Time-241.752s     Loss - loss: 0.278348   Validation Accuracy: 0.834289   Validation auc: 0.893924
+--- Category 0  recall=0.8295789004     precision=0.8093666480  f1=0.8193481407
+--- Category 1  recall=0.8381895974     precision=0.8558899741  f1=0.8469473157
+--- Category_Avg        recall=0.8338842489     precision=0.8326283111  f1=0.8331477282
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    1|      19           3802        3802     0.24824680383050454
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:02<00:00, 15.94it/s] 
+Epoch [1]:      Train Time-244.013s     Loss - loss: 0.248247   Validation Accuracy: 0.836602   Validation auc: 0.897962
+--- Category 0  recall=0.8279129770     precision=0.8144461052  f1=0.8211243289
+--- Category 1  recall=0.8437976460     precision=0.8555121996  f1=0.8496145444
+--- Category_Avg        recall=0.8358553115     precision=0.8349791524  f1=0.8353694366
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    2|      19           3802        3802     0.23956650337884383
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.03it/s] 
+Epoch [2]:      Train Time-243.451s     Loss - loss: 0.239567   Validation Accuracy: 0.838665   Validation auc: 0.900545
+--- Category 0  recall=0.8283132658     precision=0.8178596814  f1=0.8230532823
+--- Category 1  recall=0.8472373898     precision=0.8563011439  f1=0.8517451548
+--- Category_Avg        recall=0.8377753278     precision=0.8370804127  f1=0.8373992185
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    3|      19           3802        3802     0.23008940651572077
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:02<00:00, 15.96it/s] 
+Epoch [3]:      Train Time-242.465s     Loss - loss: 0.230089   Validation Accuracy: 0.840033   Validation auc: 0.900180
+--- Category 0  recall=0.8272886539     precision=0.8209577034  f1=0.8241110200
+--- Category 1  recall=0.8505874470     precision=0.8560543914  f1=0.8533121630
+--- Category_Avg        recall=0.8389380505     precision=0.8385060474  f1=0.8387115915
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    4|      19           3802        3802     0.22655906095586608
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.04it/s] 
+Epoch [4]:      Train Time-240.951s     Loss - loss: 0.226559   Validation Accuracy: 0.841252   Validation auc: 0.903146
+--- Category 0  recall=0.8269669364     precision=0.8233623330  f1=0.8251606981
+--- Category 1  recall=0.8530817889     precision=0.8561858459  f1=0.8546309989
+--- Category_Avg        recall=0.8400243626     precision=0.8397740895  f1=0.8398958485
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    5|      19           3802        3802     0.22625000439601875
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.14it/s] 
+Epoch [5]:      Train Time-242.108s     Loss - loss: 0.226250   Validation Accuracy: 0.841810   Validation auc: 0.900983
+--- Category 0  recall=0.8254103757     precision=0.8253823318  f1=0.8253963535
+--- Category 1  recall=0.8553900750     precision=0.8554141438  f1=0.8554021092
+--- Category_Avg        recall=0.8404002253     precision=0.8403982378  f1=0.8403992314
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    6|      19           3802        3802     0.22303904855109727
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:02<00:00, 16.00it/s] 
+Epoch [6]:      Train Time-240.083s     Loss - loss: 0.223039   Validation Accuracy: 0.842277   Validation auc: 0.902031
+--- Category 0  recall=0.8244614531     precision=0.8268552011  f1=0.8256565921
+--- Category 1  recall=0.8570298068     precision=0.8549800605  f1=0.8560037066
+--- Category_Avg        recall=0.8407456299     precision=0.8409176308  f1=0.8408301493
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    7|      19           3802        3802     0.21643992569198817
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.09it/s] 
+Epoch [7]:      Train Time-242.787s     Loss - loss: 0.216440   Validation Accuracy: 0.842743   Validation auc: 0.902524
+--- Category 0  recall=0.8242418934     precision=0.8278545606  f1=0.8260442770
+--- Category 1  recall=0.8580644055     precision=0.8549746628  f1=0.8565167477
+--- Category_Avg        recall=0.8411531494     precision=0.8414146117  f1=0.8412805124
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    8|      19           3802        3802     0.22373487700763526
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:02<00:00, 16.01it/s] 
+Epoch [8]:      Train Time-241.992s     Loss - loss: 0.223735   Validation Accuracy: 0.842918   Validation auc: 0.900720
+--- Category 0  recall=0.8233137259     precision=0.8287890027  f1=0.8260422914
+--- Category 1  recall=0.8591528077     precision=0.8544780601  f1=0.8568090576
+--- Category_Avg        recall=0.8412332668     precision=0.8416335314  f1=0.8414256745
+Epoch| Total-E          Batch     Total-B     Loss-loss
+    9|      19           3802        3802     0.22395146517870732
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.08it/s] 
+Epoch [9]:      Train Time-242.019s     Loss - loss: 0.223951   Validation Accuracy: 0.843058   Validation auc: 0.902207
+--- Category 0  recall=0.8224507868     precision=0.8296196476  f1=0.8260196632
+--- Category 1  recall=0.8601232399     precision=0.8540119871  f1=0.8570567195
+--- Category_Avg        recall=0.8412870133     precision=0.8418158174  f1=0.8415381914
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   10|      19           3802        3802     0.22184992599788614
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.10it/s] 
+Epoch [10]:     Train Time-242.425s     Loss - loss: 0.221850   Validation Accuracy: 0.843206   Validation auc: 0.901072
+--- Category 0  recall=0.8220470617     precision=0.8301627685  f1=0.8260849828
+--- Category 1  recall=0.8607287442     precision=0.8538164411  f1=0.8572586589
+--- Category_Avg        recall=0.8413879029     precision=0.8419896048  f1=0.8416718209
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   11|      19           3802        3802     0.22436015154406583
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.08it/s] 
+Epoch [11]:     Train Time-241.213s     Loss - loss: 0.224360   Validation Accuracy: 0.843221   Validation auc: 0.899974
+--- Category 0  recall=0.8216347073     precision=0.8304647105  f1=0.8260261119
+--- Category 1  recall=0.8610966030     precision=0.8535807298  f1=0.8573221944
+--- Category_Avg        recall=0.8413656551     precision=0.8420227202  f1=0.8416741532
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   12|      19           3802        3802     0.22084652367591964
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.19it/s] 
+Epoch [12]:     Train Time-242.038s     Loss - loss: 0.220847   Validation Accuracy: 0.843212   Validation auc: 0.900826
+--- Category 0  recall=0.8211123145     precision=0.8307975770  f1=0.8259265530
+--- Category 1  recall=0.8615129759     precision=0.8532753788  f1=0.8573743912
+--- Category_Avg        recall=0.8413126452     precision=0.8420364779  f1=0.8416504721
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   13|      19           3802        3802     0.22908075021841895
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.06it/s]
+Epoch [13]:     Train Time-241.666s     Loss - loss: 0.229081   Validation Accuracy: 0.843276   Validation auc: 0.899915
+--- Category 0  recall=0.8206841162     precision=0.8312036126  f1=0.8259103694
+--- Category 1  recall=0.8619848015     precision=0.8530444550  f1=0.8574913255
+--- Category_Avg        recall=0.8413344588     precision=0.8421240338  f1=0.8417008475
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   14|      19           3802        3802     0.22305188479767846
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.06it/s] 
+Epoch [14]:     Train Time-241.435s     Loss - loss: 0.223052   Validation Accuracy: 0.843311   Validation auc: 0.900419
+--- Category 0  recall=0.8203915823     precision=0.8314657863  f1=0.8258915630
+--- Category 1  recall=0.8622917205     precision=0.8528846672  f1=0.8575623969
+--- Category_Avg        recall=0.8413416514     precision=0.8421752267  f1=0.8417269800
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   15|      19           3802        3802     0.21988927750922102
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.22it/s] 
+Epoch [15]:     Train Time-241.435s     Loss - loss: 0.219889   Validation Accuracy: 0.843339   Validation auc: 0.899845
+--- Category 0  recall=0.8198907435     precision=0.8318549179  f1=0.8258295003
+--- Category 1  recall=0.8627577829     precision=0.8526028494  f1=0.8576502576
+--- Category_Avg        recall=0.8413242632     precision=0.8422288836  f1=0.8417398789
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   16|      19           3802        3802     0.21967014703261023
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.13it/s] 
+Epoch [16]:     Train Time-240.716s     Loss - loss: 0.219670   Validation Accuracy: 0.843346   Validation auc: 0.899353
+--- Category 0  recall=0.8196455673     precision=0.8320324046  f1=0.8257925381
+--- Category 1  recall=0.8629728833     precision=0.8524631674  f1=0.8576858312
+--- Category_Avg        recall=0.8413092253     precision=0.8422477860  f1=0.8417391847
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   17|      19           3802        3802     0.22530599243150856
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.12it/s] 
+Epoch [17]:     Train Time-241.053s     Loss - loss: 0.225306   Validation Accuracy: 0.843341   Validation auc: 0.898920
+--- Category 0  recall=0.8193002201     precision=0.8322565661  f1=0.8257275723
+--- Category 1  recall=0.8632502531     precision=0.8522628758  f1=0.8577213789
+--- Category_Avg        recall=0.8412752366     precision=0.8422597210  f1=0.8417244756
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   18|      19           3802        3802     0.21833590871816863
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:01<00:00, 16.23it/s] 
+Epoch [18]:     Train Time-240.943s     Loss - loss: 0.218336   Validation Accuracy: 0.843360   Validation auc: 0.899561
+--- Category 0  recall=0.8190358198     precision=0.8324700951  f1=0.8256983165
+--- Category 1  recall=0.8635034241     precision=0.8521156380  f1=0.8577717366
+--- Category_Avg        recall=0.8412696219     precision=0.8422928666  f1=0.8417350265
+Epoch| Total-E          Batch     Total-B     Loss-loss
+   19|      19           3802        3802     0.22087566399096972
+evaluating: 100%|███████████████████████████████████████████████████████████████████████████| 993/993 [01:03<00:00, 15.67it/s] 
+Epoch [19]:     Train Time-243.756s     Loss - loss: 0.220876   Validation Accuracy: 0.843351   Validation auc: 0.898258
+--- Category 0  recall=0.8187086704     precision=0.8326742790  f1=0.8256324217
+--- Category 1  recall=0.8637576563     precision=0.8519250272  f1=0.8578005384
+--- Category_Avg        recall=0.8412331634     precision=0.8422996531  f1=0.8417164801
