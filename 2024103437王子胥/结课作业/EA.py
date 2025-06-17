@@ -1,5 +1,3 @@
-# baseline of evolutionary algorithm from https://doi.org/10.3390/su12052127
-
 from src.baseline import Baseline
 import copy
 import numpy as np
