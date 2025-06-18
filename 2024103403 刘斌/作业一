@@ -1,0 +1,42 @@
+import time
+import copy
+N = 10000
+
+list_matrix = [[0] * N for _ in range(N)]  # 创建一个 10000×10000 的 list 矩阵
+
+print("开始修改 list 中的元素...")
+start_time_list = time.time()
+for i in range(10000):  # 修改 10000 次，每次只改一个元素
+    list_matrix[i % N][i % N] = i  # 直接修改元素（可变结构，原地修改）
+end_time_list = time.time()
+list_time = end_time_list - start_time_list
+print(f"list 修改耗时: {list_time:.4f} 秒\n")
+
+tuple_matrix = tuple(tuple(0 for _ in range(N)) for _ in range(N))  # 创建一个 10000×10000 的元组矩阵
+
+print("开始修改 tuple 中的元素（每次重建）...")
+start_time_tuple = time.time()
+temp_matrix = tuple_matrix
+for i in range(10000):  # 修改 10000 次，每次都要重建元组
+    row = i % N
+    col = i % N
+
+    # 将目标行转换成 list，修改后再转回 tuple
+    modified_row = list(temp_matrix[row])
+    modified_row[col] = i
+    new_row = tuple(modified_row)
+
+    # 替换整行，重建整个矩阵（由于元组不可变）
+    temp_matrix = temp_matrix[:row] + (new_row,) + temp_matrix[row+1:]
+end_time_tuple = time.time()
+tuple_time = end_time_tuple - start_time_tuple
+print(f"tuple 修改耗时: {tuple_time:.4f} 秒\n")
+
+
+# 性能总结
+print("性能比较总结：")
+print(f"list 总耗时：  {list_time:.4f} 秒")
+print(f"tuple 总耗时：{tuple_time:.4f} 秒")
+print("\n结论：")
+print("● list（可变结构）支持原地修改，修改速度快。")
+print("● tuple（不可变结构）每次修改都需要整体重建，极大地影响了性能。")
