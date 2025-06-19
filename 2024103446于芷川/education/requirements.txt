@@ -1,0 +1,52 @@
+# 基础依赖
+numpy==1.24.3
+pandas==2.0.3
+scipy==1.10.1
+matplotlib==3.7.2
+seaborn==0.12.2
+tqdm==4.65.0
+
+# Web框架
+fastapi==0.103.1
+uvicorn==0.23.2
+python-multipart==0.0.6
+pydantic==2.3.0
+
+# 视频处理
+opencv-python==4.8.0.76
+ffmpeg-python==0.2.0
+av==10.0.0
+flask==2.0.1
+moviepy==1.0.3
+Werkzeug==2.0.1
+
+# 深度学习框架
+torch==2.0.1
+torchvision==0.15.2
+transformers==4.33.1
+timm==0.9.5
+
+# 多模态模型
+open_clip_torch==2.20.0
+whisper==1.1.10
+
+# 目标检测
+ultralytics==8.0.145  # YOLOv8
+
+# 大语言模型
+deepseek-ai==0.1.0
+langchain==0.0.267
+
+# 存储
+minio==7.1.15
+pymongo==4.5.0
+redis==4.6.0
+
+# 可视化
+plotly==5.16.1
+dash==2.13.0
+pyecharts==2.0.4
+
+# 工具库
+python-dotenv==1.0.0
+loguru==0.7.0 
