@@ -1,0 +1,1 @@
+{"dataset": "amazon-music", "num_layers": 1, "output_dim": 128, "max_degree": 12, "mean_auc": 0.6883603426075451, "std_auc": 0.0, "mean_acc": 0.7066372568678564, "std_acc": 0.0, "total_time": 225.39865517616272, "auc_values": [0.6883603426075451], "acc_values": [0.7066372568678564]}
