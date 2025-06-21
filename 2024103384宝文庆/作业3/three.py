@@ -1,55 +1,95 @@
+import math
 import random
-import numpy as np
+import string
+from datetime import date, timedelta
+from pprint import pprint
+import datetime
 
-def generate_random_sample(**kwargs):
-    def generate_sample(levels):
-        if levels == 0:
-            return random.randint(0, 100)
-        else:
-            return [generate_sample(levels - 1) for _ in range(random.randint(1, 5))]
+def analyze(data, stats=('SUM', 'AVG', 'VAR', 'RMSE')):
+    numbers = []
 
-    sample_structure = kwargs.get("structure", 2)
-    sample_count = kwargs.get("count", 1)
-    return [generate_sample(sample_structure) for _ in range(sample_count)]
+    def extract_numbers(d):
+        if isinstance(d, dict):
+            for v in d.values():
+                extract_numbers(v)
+        elif isinstance(d, (list, tuple)):
+            for v in d:
+                extract_numbers(v)
+        elif isinstance(d, (int, float)):
+            numbers.append(d)
 
+    extract_numbers(data)
 
-def statistics_decorator(*stats):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
+    result = {}
+    if not numbers:
+        return {stat: 0 for stat in stats}
 
-            samples = func(*args, **kwargs)
-            stats_result = {}
+    if 'SUM' in stats:
+        result['SUM'] = sum(numbers)
+    if 'AVG' in stats:
+        result['AVG'] = sum(numbers) / len(numbers)
+    if 'VAR' in stats:
+        avg = result.get('AVG', sum(numbers) / len(numbers))
+        result['VAR'] = sum((x - avg) ** 2 for x in numbers) / len(numbers)
+    if 'RMSE' in stats:
+        result['RMSE'] = math.sqrt(sum(x ** 2 for x in numbers) / len(numbers))
 
-
-            def flatten(data):
-                if isinstance(data, list):
-                    return [item for sublist in data for item in flatten(sublist)]
-                else:
-                    return [data]
-
-            flattened_samples = flatten(samples)
-
-
-            if 'SUM' in stats:
-                stats_result['SUM'] = np.sum(flattened_samples)
-            if 'AVG' in stats:
-                stats_result['AVG'] = np.mean(flattened_samples)
-            if 'VAR' in stats:
-                stats_result['VAR'] = np.var(flattened_samples)
-            if 'RMSE' in stats:
-                stats_result['RMSE'] = np.sqrt(np.mean(np.square(np.array(flattened_samples))))
-
-            return stats_result
-
-        return wrapper
-
-    return decorator
+    return result
 
 
-@statistics_decorator('SUM', 'AVG', 'VAR', 'RMSE')
-def generate_samples_for_statistics(**kwargs):
-    return generate_random_sample(**kwargs)
+def random_string(length=8):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+def random_date():
+    base = date(2000, 1, 1)
+    return base + timedelta(days=random.randint(0, 10000))
+
+def generate_sample(structure):
+    if isinstance(structure, dict):
+        return {k: generate_sample(v) for k, v in structure.items()}
+    elif isinstance(structure, list):
+        return [generate_sample(structure[0]) for _ in range(random.randint(1, 3))]
+    elif isinstance(structure, tuple):
+        return tuple(generate_sample(v) for v in structure)
+    elif structure == int:
+        return random.randint(0, 100)
+    elif structure == float:
+        return round(random.uniform(0, 100), 2)
+    elif structure == str:
+        return random_string()
+    elif structure == bool:
+        return random.choice([True, False])
+    elif structure == date:
+        return random_date()
+    else:
+        return None
+
+def DataSampler(structure, count=5):
+    return [generate_sample(structure) for _ in range(count)]
 
 
-statistics = generate_samples_for_statistics(structure=3, count=5)
-print(statistics)
+if __name__ == '__main__':
+
+    structure = {
+        "id": int,
+    "name": str,
+    "scores": [float],
+    "is_active": bool,
+    "birth": datetime.date,
+    "profile": {
+        "height": float,
+        "weight": float,
+        "tags": (str, str)
+    }
+    }
+
+    # 生成数据
+    data = DataSampler(structure, count=3)
+    print("生成的数据：")
+    pprint(data)
+
+    # 统计分析
+    result = analyze(data, stats=('SUM', 'AVG', 'VAR', 'RMSE'))
+    print("\n统计结果：")
+    pprint(result)
+
