@@ -40,9 +40,12 @@ def DataSampler(**kwargs):
 structure = {
     "id": int,
     "name": str,
+    "price": float,
     "scores": [float],
+    "num": [int],
     "is_active": bool,
     "birth": datetime.date,
+    "map": (float,float),
     "profile": {
         "height": float,
         "weight": float,
