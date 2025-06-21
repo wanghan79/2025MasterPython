@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.utils.data as data
 import torch.nn.functional as F
-import utils
+
 
 class Reliable_Memory(nn.Module):
     def __init__(self, num_class, feat_dim):
