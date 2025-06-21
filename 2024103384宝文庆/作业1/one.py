@@ -1,21 +1,26 @@
 import time
+import random
 
-matrix_size = 10000
+# 创建一个 10000x10000 的 list
+list_matrix = [[0] * 10000 for _ in range(10000)]
 
-list_matrix = [[0] * matrix_size for _ in range(matrix_size)]
+# 创建一个 10000x10000 的 tuple
+tuple_matrix = tuple([tuple([0] * 10000) for _ in range(10000)])
+
+# 修改 list 的测试
 start_time = time.time()
-for i in range(matrix_size):
-    list_matrix[i][i] = 1
-end_time = time.time()
-list_time = end_time - start_time
+for _ in range(10000):
+    i, j = random.randint(0, 9999), random.randint(0, 9999)
+    list_matrix[i][j] = 1
+list_duration = time.time() - start_time
+print(f"List 修改耗时: {list_duration:.2f} 秒")
 
-
-tuple_matrix = tuple(tuple([0] * matrix_size) for _ in range(matrix_size))
+# 修改 tuple 的测试
 start_time = time.time()
-
-tuple_matrix = tuple(tuple([1 if i == j else 0 for j in range(matrix_size)]) for i in range(matrix_size))
-end_time = time.time()
-tuple_time = end_time - start_time
-
-print(f"List 修改耗时: {list_time:.4f}秒")
-print(f"Tuple 修改耗时: {tuple_time:.4f}秒")
+for _ in range(10000):
+    i, j = random.randint(0, 9999), random.randint(0, 9999)
+    row = list(tuple_matrix[i])
+    row[j] = 1
+    tuple_matrix = tuple(tuple_matrix[:i] + (tuple(row),) + tuple_matrix[i+1:])
+tuple_duration = time.time() - start_time
+print(f"Tuple 修改耗时: {tuple_duration:.2f} 秒")
