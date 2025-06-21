@@ -5,16 +5,9 @@ from tqdm import tqdm
 from tensorboard_logger import Logger
 import time
 import datetime
-
-import options
-import utils
-from dataset import dataset
 from model_S import S_Model
 from model_I import I_Model
-from train import S_train, I_train
-from test import S_test, I_test
-from log import save_config, initial_log, save_best_record
-from ranking import reliability_ranking
+
 
 
 def main(args):
