@@ -72,15 +72,18 @@ if __name__ == '__main__':
 
     structure = {
         "id": int,
-    "name": str,
-    "scores": [float],
-    "is_active": bool,
-    "birth": datetime.date,
-    "profile": {
-        "height": float,
-        "weight": float,
-        "tags": (str, str)
-    }
+        "name": str,
+        "price": float,
+        "scores": [float],
+        "num": [int],
+        "is_active": bool,
+        "birth": datetime.date,
+        "map": (float, float),
+        "profile": {
+            "height": float,
+            "weight": float,
+            "tags": (str, str)
+        }
     }
 
     # 生成数据
