@@ -27,12 +27,12 @@ unet.load_weights(load_path)
 #------------------------------测试模型----------------------------------------
 model_predict = unet.predict(test_x)
  
-# 保存预测结果（新增代码）
+# 保存预测结果
 pred = normalize(model_predict[0])
 pred = (pred * 255).astype(np.uint8)  # 转换为0-255范围的uint8类型
 cv2.imwrite(save_path, pred)          # 使用OpenCV保存图片
  
-# 显示图片（原代码保持不变）
+# 显示图片
 draw_img(test_x[0])                      # 原始图片
 draw_img(test_y[0])                      # 标签图片
 draw_img(normalize(model_predict[0]))    # 预测图片
