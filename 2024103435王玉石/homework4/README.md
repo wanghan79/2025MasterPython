@@ -20,7 +20,7 @@ UNet 的初衷是为了解决医学图像分割的问题，在解决细胞层面
 关于使用：<br />
 1. 添加医学影像数据的训练集和测试集（里面包含原始图像和分割图像）到datasets目录下<br />
 
-  ![1750568196763](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1750568196763.png)
+  ![1750568196763](datasets/test/Images/25.png)
 
 ![1750568477512](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1750568477512.png)
 
