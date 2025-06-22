@@ -20,20 +20,20 @@ UNet 的初衷是为了解决医学图像分割的问题，在解决细胞层面
 关于使用：<br />
 1. 添加医学影像数据的训练集和测试集（里面包含原始图像和分割图像）到datasets目录下<br />
 
-  ![1750568196763](datasets/test/Images/25.png)
+  ![1750568196763](datasets/md/1.png)
 
-![1750568477512](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1750568477512.png)
+![1750568477512](datasets/md/2.png)
 
 2. 安装好对应的依赖环境（主要是keras和tensorflow）<br />
 
 3. 开启训练，运行train.py（运行前把模型结果和训练数据路径设置好）
 
-  ![1750568260312](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1750568260312.png)
+  ![1750568260312](datasets/md/3.png)
 
 4. 运行test.py，得到分割的结果。
 
   
 
-![1750568290056](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1750568290056.png)
+![1750568290056](datasets/md/4.png)
 
-![1750568372134](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1750568372134.png)
+![1750568372134](datasets/md/5.png)
