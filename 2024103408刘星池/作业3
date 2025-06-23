@@ -1,1 +1,118 @@
+import time
+import random
+import string
+from typing import Any, Union, Optional, get_args, get_origin
+from datetime import date, timedelta
+import math
+
+
+def generate_random_value(dtype: Any):
+    if dtype == int:
+        return random.randint(0, 100)
+    elif dtype == float:
+        return round(random.uniform(0, 100), 2)
+    elif dtype == str:
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+    elif dtype == bool:
+        return random.choice([True, False])
+    elif dtype == date:
+        delta_days = random.randint(0, 365)
+        return date.today() - timedelta(days=delta_days)
+    else:
+        raise TypeError(f"不支持的基础类型: {dtype}")
+
+
+def generate_by_structure(structure: Any) -> Any:
+    origin = get_origin(structure)
+    args = get_args(structure)
+
+    if structure is None or structure is type(None):
+        return None
+    elif origin is Union:
+        non_none_args = [arg for arg in args if arg is not type(None)]
+        if not non_none_args:
+            return None
+        selected_type = random.choice(non_none_args)
+        return generate_by_structure(selected_type)
+    elif isinstance(structure, type):
+        return generate_random_value(structure)
+    elif isinstance(structure, list):
+        if len(structure) != 1:
+            raise ValueError("列表结构应仅包含一个类型示例元素")
+        return [generate_by_structure(structure[0]) for _ in range(random.randint(1, 5))]
+    elif isinstance(structure, tuple):
+        return tuple(generate_by_structure(sub) for sub in structure)
+    elif isinstance(structure, dict):
+        return {key: generate_by_structure(sub) for key, sub in structure.items()}
+    else:
+        raise TypeError(f"不支持的嵌套结构类型: {structure}")
+
+
+def stats_decorator(*metrics):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            samples = func(*args, **kwargs)
+            numbers = extract_all_numbers(samples)
+            print(f"提取的数值数据: {numbers}")
+            result = {}
+            if 'SUM' in metrics:
+                total = sum(numbers)
+                print(f"SUM: {total}")
+                result['SUM'] = total
+            if 'AVG' in metrics:
+                avg = sum(numbers) / len(numbers) if numbers else 0.0
+                print(f"AVG: {avg}")
+                result['AVG'] = avg
+            if 'VAR' in metrics:
+                mean = sum(numbers) / len(numbers) if numbers else 0.0
+                var = sum((x - mean) ** 2 for x in numbers) / len(numbers) if numbers else 0.0
+                print(f"VAR: {var}")
+                result['VAR'] = var
+            if 'RMSE' in metrics:
+                rmse = math.sqrt(sum(x ** 2 for x in numbers) / len(numbers)) if numbers else 0.0
+                print(f"RMSE: {rmse}")
+                result['RMSE'] = rmse
+            return result
+        return wrapper
+    return decorator
+
+
+def extract_all_numbers(data):
+    result = []
+    if isinstance(data, (int, float)):
+        result.append(data)
+    elif isinstance(data, (list, tuple)):
+        for item in data:
+            result.extend(extract_all_numbers(item))
+    elif isinstance(data, dict):
+        for value in data.values():
+            result.extend(extract_all_numbers(value))
+    return result
+
+
+@stats_decorator('SUM', 'AVG', 'VAR', 'RMSE')
+def generate_samples(**kwargs) -> list:
+    structure = kwargs.get('structure')
+    num = kwargs.get('num', 1)
+    if not isinstance(num, int) or num <= 0:
+        raise ValueError("num 必须是正整数")
+    if not structure:
+        raise ValueError("必须指定 structure 参数")
+    return [generate_by_structure(structure) for _ in range(num)]
+
+
+if __name__ == "__main__":
+    schema = {
+        "user": str,
+        "scores": [int],
+        "profile": {
+            "age": Union[int, None],
+            "active": bool,
+            "birthday": Optional[date]
+        },
+        "history": [(int, float, str)],
+        "note": Optional[str]
+    }
+    stats = generate_samples(structure=schema, num=5)
+    print("统计结果:", stats)
 
