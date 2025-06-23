@@ -4,30 +4,30 @@ import random
 ROWS, COLS = 10000, 10000
 MODIFY_TIMES = 10000
 
-print("\u521d\u59cb\u5316 list...")
+print("初始化 list...")
 start_list_init = time.time()
 list_matrix = [[0 for _ in range(COLS)] for _ in range(ROWS)]
 end_list_init = time.time()
-print(f"list \u521d\u59cb\u5316\u8017\u65f6: {end_list_init - start_list_init:.4f} \u79d2")
+print(f"list 初始化耗时: {end_list_init - start_list_init:.4f} 秒")
 
-print("\u521d\u59cb\u5316 tuple...")
+print("初始化 tuple...")
 start_tuple_init = time.time()
 tuple_matrix = tuple(tuple(0 for _ in range(COLS)) for _ in range(ROWS))
 end_tuple_init = time.time()
-print(f"tuple \u521d\u59cb\u5316\u8017\u65f6: {end_tuple_init - start_tuple_init:.4f} \u79d2")
+print(f"tuple 初始化耗时: {end_tuple_init - start_tuple_init:.4f} 秒")
 
-print("\u8fdb\u884c list \u4fee\u6539...")
+print("进行 list 修改...")
 start_list_mod = time.time()
 for i in range(MODIFY_TIMES):
     r = random.randint(0, ROWS - 1)
     c = random.randint(0, COLS - 1)
     list_matrix[r][c] = 1
     if i % 1000 == 0:
-        print(f"list \u4fee\u6539\u8fdb\u5ea6: {i}/{MODIFY_TIMES}")
+        print(f"list 修改进度: {i}/{MODIFY_TIMES}")
 end_list_mod = time.time()
-print(f"list \u4fee\u6539\u603b\u8017\u65f6: {end_list_mod - start_list_mod:.4f} \u79d2")
+print(f"list 修改总耗时: {end_list_mod - start_list_mod:.4f} 秒")
 
-print("\u8fdb\u884c tuple \u4fee\u6539...")
+print("进行 tuple 修改...")
 start_tuple_mod = time.time()
 for i in range(MODIFY_TIMES):
     r = random.randint(0, ROWS - 1)
@@ -38,10 +38,10 @@ for i in range(MODIFY_TIMES):
         tuple(row) if j == r else tuple_matrix[j] for j in range(ROWS)
     )
     if i % 1000 == 0:
-        print(f"tuple \u4fee\u6539\u8fdb\u5ea6: {i}/{MODIFY_TIMES}")
+        print(f"tuple 修改进度: {i}/{MODIFY_TIMES}")
 end_tuple_mod = time.time()
-print(f"tuple \u4fee\u6539\u603b\u8017\u65f6: {end_tuple_mod - start_tuple_mod:.4f} \u79d2")
+print(f"tuple 修改总耗时: {end_tuple_mod - start_tuple_mod:.4f} 秒")
 
-print("\n\u603b\u7ed3:\n----------------------")
-print(f"list \u603b\u8017\u65f6: {(end_list_init - start_list_init) + (end_list_mod - start_list_mod):.4f} \u79d2")
-print(f"tuple \u603b\u8017\u65f6: {(end_tuple_init - start_tuple_init) + (end_tuple_mod - start_tuple_mod):.4f} \u79d2")
+print("\n总结:\n----------------------")
+print(f"list 总耗时: {(end_list_init - start_list_init) + (end_list_mod - start_list_mod):.4f} 秒")
+print(f"tuple 总耗时: {(end_tuple_init - start_tuple_init) + (end_tuple_mod - start_tuple_mod):.4f} 秒")
