@@ -1,0 +1,227 @@
+import random
+import string
+from datetime import datetime, timedelta
+import numpy as np
+from functools import wraps
+import json
+from typing import Any, Dict, List, Tuple, Optional, Union
+
+
+def count_decorator(*stats):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            result = func(self, *args, **kwargs)
+            leaf_nodes = self.get_leaf_nodes(result)
+            numeric_leaf_nodes = [leaf for leaf in leaf_nodes if isinstance(leaf['value'], (int, float))]
+            stats_result = {}
+            numeric_values = [leaf['value'] for leaf in numeric_leaf_nodes]
+            if not numeric_values:
+                return result, stats_result
+
+            # 预计算常用统计量
+            sum_values = sum(numeric_values)
+            count = 0
+            for v in numeric_values:
+                if type(v) in (int, float):
+                    count += 1
+            for stat in stats:
+                if stat == 'mean':
+                    stats_result[stat] = sum_values / count
+                elif stat == 'variance':
+                    mean = sum_values / count
+                    variance = sum((x - mean) ** 2 for x in numeric_values) / count
+                    stats_result[stat] = variance
+                elif stat == 'r_mse':
+                    mean = sum_values / count
+                    variance = sum((x - mean) ** 2 for x in numeric_values) / count
+                    stats_result[stat] = np.sqrt(variance)
+                elif stat == 'sum':
+                    stats_result[stat] = sum_values
+
+            return result, stats_result
+
+        return wrapper
+
+    return decorator
+
+
+class DataSampler:
+    def __init__(self, seed: Optional[int] = None):
+        self.random_generator = random.Random()
+        if seed is not None:
+            self.set_seed(seed)
+
+    def set_seed(self, seed: int) -> None:
+        """设置随机数生成器的种子"""
+        self.random_generator.seed(seed)
+
+    def generate_value(self, value_def: Dict[str, Any]) -> Any:
+        if "type" not in value_def:
+            return value_def
+
+        data_type = value_def["type"]
+
+        # 适配新格式参数名
+        params = self._normalize_params(value_def)
+
+        if data_type == "int":
+            return self.random_generator.randint(*params["datarange"])
+        elif data_type == "float":
+            return round(self.random_generator.uniform(*params["datarange"]), 2)
+        elif data_type == "str":
+            length = params.get("len", 10)
+            datarange = params.get("datarange", string.ascii_letters + string.digits)
+
+            # 处理字符列表的情况
+            if isinstance(datarange, list):
+                return ''.join(self.random_generator.choice(datarange) for _ in range(length))
+            else:
+                return ''.join(self.random_generator.choice(datarange) for _ in range(length))
+
+        elif data_type == "bool":
+            return self.random_generator.choice([True, False])
+        elif data_type == "date":
+            # 适配新的日期格式
+            start = datetime.strptime(params["datarange"][0], "%Y-%m-%d")
+            end = datetime.strptime(params["datarange"][1], "%Y-%m-%d")
+            delta = end - start
+            random_days = self.random_generator.randint(0, delta.days)
+            return (start + timedelta(days=random_days)).strftime("%Y-%m-%d")
+        elif data_type == "list":
+            list_length = params.get("len", 3)
+            element_def = params["elements"]
+            return [self.generate_value(element_def) for _ in range(list_length)]
+        elif data_type == "tuple":
+            tuple_length = params.get("len", 3)
+            element_def = params["elements"]
+            return tuple(self.generate_value(element_def) for _ in range(tuple_length))
+        elif data_type == "dict":
+            # 处理嵌套字典结构
+            return {k: self.generate_value(v) for k, v in params["subs"].items()}
+        else:
+            return None
+
+    def _normalize_params(self, value_def: Dict[str, Any]) -> Dict[str, Any]:
+
+        params = {k: v for k, v in value_def.items() if k != "type"}
+
+        if "fields" in params:
+            params["subs"] = params.pop("fields")
+
+        if "range" in params:
+            params["datarange"] = params.pop("range")
+
+        if "length" in params:
+            params["len"] = params.pop("length")
+
+        if "charset" in params:
+            params["datarange"] = params.pop("charset")
+
+        if "start" in params and "end" in params:
+            params["datarange"] = (params.pop("start"), params.pop("end"))
+
+        # 处理列表元素类型定义
+        if "element_type" in params:
+            params["elements"] = params.pop("element_type")
+
+        # 处理列表大小
+        if "size" in params:
+            params["len"] = params.pop("size")
+
+        return params
+
+    def generate(self, **kwargs) -> Dict[str, Any]:
+        return {key: self.generate_value(value) for key, value in kwargs.items()}
+
+    @count_decorator('mean', 'variance', 'r_mse', 'sum')
+    def analyze(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        return data
+
+    def get_leaf_nodes(self, data: Any) -> List[Dict[str, Any]]:
+        leaf_nodes = []
+
+        def traverse(value: Any, path: str = "") -> None:
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    traverse(v, f"{path}.{k}" if path else k)
+            elif isinstance(value, list) or isinstance(value, tuple):
+                for idx, item in enumerate(value):
+                    traverse(item, f"{path}[{idx}]")
+            else:
+                leaf_nodes.append({"path": path, "value": value})
+
+        traverse(data)
+        return leaf_nodes
+
+
+if __name__ == "__main__":
+    # 设置随机种子以便结果可重现
+    sampler = DataSampler(seed=42)
+
+    data_structure = {
+        "library_system": {
+            "type": "dict",
+            "fields": {
+                "book_detail": {
+                    "type": "dict",
+                    "fields": {
+                        "id": {"type": "int", "range": (100000, 999999)},
+                        "bianma": {"type": "str", "length": 10},
+                        "is_active": {"type": "bool"},
+                        "publication_year": {"type": "int", "range": (1800, 2025)},
+                        "genre": {
+                            "type": "str",
+                            "charset": [
+                                "Fiction", "Non-fiction", "Science", "History",
+                                "Biography", "Fantasy", "Mystery", "Romance"
+                            ],
+                            "length": 1
+                        },
+                        "availability": {"type": "bool"}
+                    }
+                },
+                "user_account": {
+                    "type": "dict",
+                    "fields": {
+                        "user_id": {"type": "int", "range": (100000, 999999)},
+                        "membership_start": {
+                            "type": "date",
+                            "start": "2015-01-01",
+                            "end": "2025-12-31"
+                        },
+                        "is_active": {"type": "bool"},
+                        "borrowed_books": {
+                            "type": "list",
+                            "element_type": {
+                                "type": "dict",
+                                "fields": {
+                                    "isbn": {"type": "str", "length": 13},
+                                    "borrow_date": {
+                                        "type": "date",
+                                        "start": "2020-01-01",
+                                        "end": "2025-12-31"
+                                    },
+                                    "return_date": {
+                                        "type": "date",
+                                        "start": "2020-01-01",
+                                        "end": "2026-12-31"
+                                    },
+                                    "is_returned": {"type": "bool"}
+                                }
+                            },
+                            "size": 5
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    sample_dict = sampler.generate(**data_structure)
+    print("生成的数据:")
+    print(json.dumps(sample_dict, indent=2, ensure_ascii=False))  # 格式化输出
+
+    result, stats_result = sampler.analyze(sample_dict)
+    print("\n统计结果:")
+    print(json.dumps(stats_result, indent=2))
