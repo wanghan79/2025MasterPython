@@ -1,0 +1,31 @@
+import time
+
+def list_performance():
+    size = 10000
+    matrix = [[0] * size for _ in range(size)]
+
+    start = time.perf_counter()
+    for _ in range(1000):
+        matrix[0][0] = 1
+    return time.perf_counter() - start
+
+
+def tuple_performance():
+    size = 10000
+    base = tuple(0 for _ in range(size))
+    matrix = tuple(base for _ in range(size))
+
+    start = time.perf_counter()
+    for _ in range(10000):
+        new_row = (1,) + base[1:]
+        matrix = (new_row,) + matrix[1:]
+    return time.perf_counter() - start
+
+
+if __name__ == "__main__":
+    list_time = list_performance()
+    tuple_time = tuple_performance()
+
+    print(f"列表操作时间：{list_time:.6f}秒")
+    print(f"元组操作时间：{tuple_time:.6f}秒")
+    print(f"性能差异倍数：{tuple_time / list_time:.1f}倍")
