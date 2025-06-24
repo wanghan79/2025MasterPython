@@ -1,0 +1,193 @@
+import random
+import string
+from datetime import datetime, timedelta
+import numpy as np
+from functools import wraps
+
+
+# 定义数据处理修饰器
+def data_processing_decorator(*stats):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # 调用原始方法
+            result = func(self, *args, **kwargs)
+
+            # 获取所有叶节点并筛选出 int 或 float 类型的数据
+            leaf_nodes = self.retrieve_leaf_nodes(result)
+            numeric_leaf_nodes = [leaf for leaf in leaf_nodes if isinstance(leaf['value'], (int, float))]
+
+            # 初始化统计结果字典
+            stats_result = {}
+
+            # 按指定的统计量进行计算
+            numeric_values = [leaf['value'] for leaf in numeric_leaf_nodes]
+            if numeric_values:  # 只有存在数值型数据时才计算统计量
+                for stat in stats:
+                    if stat == 'mean':
+                        stats_result[stat] = np.mean(numeric_values)
+                    elif stat == 'variance':
+                        stats_result[stat] = np.var(numeric_values, ddof=0)  # 总体方差
+                    elif stat == 'rmse':
+                        stats_result[stat] = np.sqrt(np.var(numeric_values, ddof=0))
+                    elif stat == 'sum':
+                        stats_result[stat] = np.sum(numeric_values)
+
+            # 返回原始结果和统计结果
+            return result, stats_result
+
+        return wrapper
+    return decorator
+
+
+class SampleGenerator:
+    def __init__(self, random_generator=None):
+        """
+        初始化样本生成器。
+        """
+        self.random_generator = random_generator or random.SystemRandom()
+
+    def create_value(self, value_def):
+        if "type" not in value_def:
+            return value_def  # 如果没有指定类型，直接返回值
+
+        data_type = value_def["type"]
+        params = {k: v for k, v in value_def.items() if k != "type"}
+
+        if data_type == "int":
+            return self.random_generator.randint(params["datarange"][0], params["datarange"][1])
+        elif data_type == "float":
+            return self.random_generator.uniform(params["datarange"][0], params["datarange"][1])
+        elif data_type == "str":
+            length = params.get("len", 10)
+            return ''.join(self.random_generator.choice(params["datarange"]) for _ in range(length))
+        elif data_type == "bool":
+            return self.random_generator.choice([True, False])
+        elif data_type == "date":
+            start = datetime.strptime(params["datarange"][0], "%Y-%m-%d")
+            end = datetime.strptime(params["datarange"][1], "%Y-%m-%d")
+            delta = end - start
+            random_days = self.random_generator.randint(0, delta.days)
+            return (start + timedelta(days=random_days)).strftime("%Y-%m-%d")
+        elif data_type == "list":
+            list_length = params.get("len", 3)
+            element_def = params["elements"]
+            return [self.create_value(element_def) for _ in range(list_length)]
+        elif data_type == "tuple":
+            tuple_length = params.get("len", 3)
+            element_def = params["elements"]
+            return tuple(self.create_value(element_def) for _ in range(tuple_length))
+        elif data_type == "dict":
+            return {k: self.create_value(v) for k, v in params["subs"].items()}
+        else:
+            return None
+
+    def generate_sample(self, **kwargs):
+        sample_dict = {}
+        for key, value in kwargs.items():
+            if isinstance(value, dict):
+                sample_dict[key] = self.create_value(value)
+            else:
+                sample_dict[key] = value
+        return sample_dict
+
+    @data_processing_decorator('mean', 'variance', 'rmse', 'sum')
+    def analyze_data(self, data):
+        # 这里可以添加对数据的分析逻辑，目前先直接返回数据
+        return data
+
+    def retrieve_leaf_nodes(self, data):
+        leaf_nodes = []
+        def traverse(value, path=""):
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    traverse(v, f"{path}.{k}" if path else k)
+            elif isinstance(value, list) or isinstance(value, tuple):
+                for idx, item in enumerate(value):
+                    traverse(item, f"{path}[{idx}]")
+            else:
+                leaf_nodes.append({"path": path, "value": value})
+
+        traverse(data)
+        return leaf_nodes
+
+
+if __name__ == "__main__":
+
+    # 定义生成的产品数据
+    data_template = {
+        "product_id": {
+            "type": "str",
+            "datarange": string.ascii_uppercase + string.digits,
+            "len": 8
+        },
+        "category": {
+            "type": "str",
+            "datarange": ["Electronics", "Clothing", "Books", "Home", "Sports"],
+            "len": 1
+        },
+        "price": {
+            "type": "float",
+            "datarange": (10.0, 1000.0)
+        },
+        "specs": {
+            "type": "dict",
+            "subs": {
+                "weight": {"type": "float", "datarange": (0.1, 20.0)},
+                "dimensions": {
+                    "type": "tuple",
+                    "len": 3,
+                    "elements": {"type": "int", "datarange": (5, 100)}
+                }
+            }
+        },
+        "in_stock": {"type": "bool"},
+        "stock_history": {
+            "type": "list",
+            "len": 6,
+            "elements": {
+                "type": "dict",
+                "subs": {
+                    "month": {"type": "str", "datarange": ["2023-01", "2023-06"]},
+                    "quantity": {"type": "int", "datarange": (50, 500)}
+                }
+            }
+        }
+    }
+
+    generator = SampleGenerator()
+ 
+    print("数据为:")
+    product_data = generator.generate_sample(**data_template)
+    print(product_data)
+
+    order_data = generator.generate_sample(
+        order_id={"type": "int", "datarange": (99, 10000)},
+        customer={
+            "type": "dict",
+            "subs": {
+                "name": {"type": "str", "datarange": string.ascii_letters, "len": 9},
+                "premium": {"type": "bool"}
+            }
+        },
+        items={
+            "type": "list",
+            "len": 3,
+            "elements": {
+                "type": "dict",
+                "subs": {
+                    "product_id": {"type": "str", "datarange": string.digits, "len": 6},
+                    "quantity": {"type": "int", "datarange": (2, 7)},
+                    "price": {"type": "float", "datarange": (15.0, 120.0)}
+                }
+            }
+        }
+    )
+
+    print("数据为:")
+    print(order_data)
+
+    # 分析数据并显示统计结果
+    result, stats = generator.analyze_data(order_data)
+    print("数据统计:")
+    print(stats)
