@@ -24,7 +24,7 @@ def create_random_object(**kwargs):
             obj[key] = num if random.choice([True, False]) else -num
         elif rule == float:
             # 生成随机浮点数：随机选取指数与基数，不限制数值范围
-            exponent = random.randint(-308, 308)
+            exponent = random.randint(-10, 10)
             base = random.random()
             num = base * (10 ** exponent)
             obj[key] = num if random.choice([True, False]) else -num

@@ -1,0 +1,31 @@
+一共两个代码：prompt.py和graph.py
+这个两个代码实现的是融合GNN和BERT的多标签文本分类，处理层次标签（比如一个文本不仅属于体育类，还属于体育类的子类篮球）。
+
+
+prompt.py
+
+GraphEmbedding类：融合文本和图结构嵌入（GraphEncoder的输出）
+
+	将原始的BERT词嵌入（original_embedding）与包含标签嵌入和Prompt嵌入的新嵌入（new_embedding）通过weight()动态拼接获得扩展的词表空间。这个类中通过property装饰器实现了动态计算嵌入矩阵。
+
+OutputEmbedding类：实现输出层的线性变化
+
+Prompt类：基于BERT多标签分类
+
+	这个类继承了BERT预训练模支持图结构标签预测。加载Bert模型并且初始化，通过init_embedding融合标签嵌入。前向传播处理文本，生成BERT隐藏状态，计算MLM损失。通过提取多标签分类位置的logits，计算多标签交叉上损失。然后合并两种损失作为最终训练目标。通过generate方法利用图结构信息生成预测标签。
+
+
+
+graph.py
+
+GraphAttention类：基于注意力的图神经网络
+
+GraphLayer类：图神经网络的一层处理单元
+
+	使用了残差连接和层归一化，支持3种图神经网络结构（Graphormer基于注意力的图模型/GCN/GAT）。
+
+GraphEncoder类：图神经网络编码器，生成标签的图嵌入表示
+
+	通过path_list构建标签间的父子关系。对于Graphormer计算标签之间的距离和路径，构建全连接图。流程是：结合标签文本嵌入和ID嵌入，通过图层处理标签关系，最终生成融合图结构信息的标签嵌入。
+
+	

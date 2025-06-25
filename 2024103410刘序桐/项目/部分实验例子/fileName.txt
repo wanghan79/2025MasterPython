@@ -1,0 +1,12 @@
+p_200_1
+p_2000_4
+pokec_2000
+p_500_2
+add20
+3elt
+L
+delaunay_n12
+p_1000_3
+road-minnesota
+bio-dmela
+p_3000_5

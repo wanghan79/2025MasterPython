@@ -1,0 +1,30 @@
+{
+    "calibration_data": [
+        {
+            "object_pixels": 280,
+            "real_size_cm": 20.0,
+            "pixel_to_cm": 0.07142857142857142,
+            "distance_cm": 40
+        },
+        {
+            "object_pixels": 207,
+            "real_size_cm": 20.0,
+            "pixel_to_cm": 0.0966183574879227,
+            "distance_cm": 60
+        },
+        {
+            "object_pixels": 174,
+            "real_size_cm": 20.0,
+            "pixel_to_cm": 0.11494252873563218,
+            "distance_cm": 80
+        },
+        {
+            "object_pixels": 133,
+            "real_size_cm": 20.0,
+            "pixel_to_cm": 0.15037593984962405,
+            "distance_cm": 100
+        }
+    ],
+    "average_pixel_to_cm": 0.1083413493754376,
+    "average_pixel_to_meter": 0.001083413493754376
+}

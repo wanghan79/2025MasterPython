@@ -1,0 +1,3 @@
+hydrophobicity
+electrostatics
+hydrogen_bonds

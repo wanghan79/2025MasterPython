@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 智能课堂分析系统{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- 欢迎区域 -->
+    <div class="row mb-5">
+        <div class="col-md-12 text-center">
+            <h1 class="display-4 mb-3">智能课堂分析系统</h1>
+            <p class="lead text-muted">基于人工智能的课堂教学分析平台</p>
+            <div class="mt-4">
+                <a href="/videos" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-upload me-2"></i>上传视频
+                </a>
+                <a href="/videos" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-chart-line me-2"></i>查看分析
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能展示 -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-video fa-3x text-primary"></i>
+                    </div>
+                    <h5 class="card-title text-center">视频处理</h5>
+                    <p class="card-text text-muted">
+                        支持多种格式视频上传，自动进行预处理和转码，确保最佳分析效果。
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-brain fa-3x text-success"></i>
+                    </div>
+                    <h5 class="card-title text-center">行为识别</h5>
+                    <p class="card-text text-muted">
+                        采用先进的AI模型，精确识别和分析课堂中的教学行为和互动模式。
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-project-diagram fa-3x text-info"></i>
+                    </div>
+                    <h5 class="card-title text-center">多模态对齐</h5>
+                    <p class="card-text text-muted">
+                        将视频、音频和文本数据进行智能对齐，提供全方位的教学分析。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 智能问答和可视化 -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-robot text-primary me-2"></i>智能问答
+                    </h5>
+                    <p class="card-text text-muted">
+                        基于大语言模型的智能问答系统，为教学提供深度分析和专业建议。
+                    </p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>教学行为分析
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>课堂互动评估
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>改进建议生成
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar text-primary me-2"></i>可视化分析
+                    </h5>
+                    <p class="card-text text-muted">
+                        丰富的数据可视化工具，直观展示课堂教学的各个维度。
+                    </p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>行为分布热力图
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>时序互动分析
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>多维度评估图表
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统架构 -->
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-4">系统架构</h5>
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="fas fa-database fa-2x text-primary mb-3"></i>
+                                <h6>数据采集层</h6>
+                                <p class="small text-muted">视频上传与预处理</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="fas fa-microchip fa-2x text-success mb-3"></i>
+                                <h6>算法处理层</h6>
+                                <p class="small text-muted">行为识别与分析</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="fas fa-brain fa-2x text-info mb-3"></i>
+                                <h6>大模型应用层</h6>
+                                <p class="small text-muted">智能分析与问答</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="fas fa-chart-pie fa-2x text-warning mb-3"></i>
+                                <h6>可视化存储层</h6>
+                                <p class="small text-muted">数据展示与存储</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

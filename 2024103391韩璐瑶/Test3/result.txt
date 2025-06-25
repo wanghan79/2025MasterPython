@@ -1,0 +1,35 @@
+统计结果 (SUM, AVG, VAR, RMSE):
+  SUM: 38022.4800
+  AVG: 1267.4160
+  VAR: 9139377.4600
+  RMSE: 3278.0666
+[{'active': True,
+  'name': 'nAveY0PA',
+  'profile': {'age': 51, 'height': 173.82, 'scores': [0.78, 0.79]},
+  'signup_date': '2022-06-21',
+  'tags': ('0cmY', 'xMcL'),
+  'user_id': 7300},
+ {'active': True,
+  'name': 'UzGMQI5H',
+  'profile': {'age': 53, 'height': 166.61, 'scores': [0.67, 0.39]},
+  'signup_date': '2023-12-24',
+  'tags': ('XP50', 'IHWR'),
+  'user_id': 1341},
+ {'active': False,
+  'name': 'DfKWIGwD',
+  'profile': {'age': 28, 'height': 155.8, 'scores': [0.44, 0.9]},
+  'signup_date': '2023-07-23',
+  'tags': ('7Sww', 'WD0c'),
+  'user_id': 9667},
+ {'active': False,
+  'name': '3gFVSvAM',
+  'profile': {'age': 35, 'height': 187.9, 'scores': [0.54, 0.78]},
+  'signup_date': '2022-10-17',
+  'tags': ('hBd0', 'c9CB'),
+  'user_id': 9272},
+ {'active': True,
+  'name': 'TIaOmbHz',
+  'profile': {'age': 35, 'height': 181.77, 'scores': [0.45, 0.84]},
+  'signup_date': '2023-07-07',
+  'tags': ('fY8f', 'NNrq'),
+  'user_id': 9365}]

@@ -1,0 +1,133 @@
+import random
+import string
+import math
+from datetime import datetime, timedelta
+from functools import wraps
+from typing import Any, Dict, Union, List, Tuple
+
+# -------- 工具函数：用于生成随机基本类型 --------
+def random_string(length=8):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+def random_date(start_year=2000, end_year=2025):
+    start = datetime(start_year, 1, 1)
+    end = datetime(end_year, 12, 31)
+    delta = end - start
+    random_days = random.randint(0, delta.days)
+    return (start + timedelta(days=random_days)).strftime('%Y-%m-%d')
+
+# -------- 递归生成结构化随机数据 --------
+def generate_value(dtype: Union[str, list, tuple, dict]) -> Any:
+    if isinstance(dtype, str):
+        if dtype == 'int':
+            return random.randint(0, 10000)
+        elif dtype == 'float':
+            return round(random.uniform(0, 10000), 2)
+        elif dtype == 'str':
+            return random_string()
+        elif dtype == 'bool':
+            return random.choice([True, False])
+        elif dtype == 'date':
+            return random_date()
+        else:
+            raise ValueError(f"Unsupported type: {dtype}")
+
+    elif isinstance(dtype, list):
+        if not dtype:
+            return []
+        element_type = dtype[0]
+        return [generate_value(element_type) for _ in range(random.randint(1, 3))]
+
+    elif isinstance(dtype, tuple):
+        return tuple(generate_value(t) for t in dtype)
+
+    elif isinstance(dtype, dict):
+        return {k: generate_value(v) for k, v in dtype.items()}
+
+    else:
+        raise TypeError(f"Invalid type: {type(dtype)}")
+
+# -------- 数据生成主函数 --------
+def DataSampler(sample_structure: dict, **kwargs):
+    count = kwargs.get('count', 1)
+    return [generate_value(sample_structure) for _ in range(count)]
+
+# -------- 装饰器：提取数值字段并计算统计指标 --------
+def stats_decorator(*stats_to_compute):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            samples = func(*args, **kwargs)
+
+            # 提取所有数值型叶子节点
+            def extract_numeric_values(obj):
+                values = []
+                if isinstance(obj, dict):
+                    for v in obj.values():
+                        values.extend(extract_numeric_values(v))
+                elif isinstance(obj, list) or isinstance(obj, tuple):
+                    for item in obj:
+                        values.extend(extract_numeric_values(item))
+                elif isinstance(obj, (int, float)):
+                    values.append(obj)
+                return values
+
+            all_values = []
+            for sample in samples:
+                all_values.extend(extract_numeric_values(sample))
+
+            result = {}
+            n = len(all_values)
+
+            if not all_values:
+                return {"error": "No numeric values found."}
+
+            if 'SUM' in stats_to_compute:
+                result['SUM'] = sum(all_values)
+
+            if 'AVG' in stats_to_compute:
+                result['AVG'] = sum(all_values) / n
+
+            if 'VAR' in stats_to_compute:
+                mean = sum(all_values) / n
+                result['VAR'] = sum((x - mean) ** 2 for x in all_values) / n
+
+            if 'RMSE' in stats_to_compute:
+                result['RMSE'] = math.sqrt(sum(x ** 2 for x in all_values) / n)
+
+            return {
+                'samples': samples,
+                'statistics': result
+            }
+
+        return wrapper
+    return decorator
+
+# -------- 生成数据并自动分析数值字段 --------
+@stats_decorator('SUM', 'AVG', 'VAR', 'RMSE')
+def generate_user_data():
+    structure = {
+        'user_id': 'int',
+        'name': 'str',
+        'is_active': 'bool',
+        'signup_date': 'date',
+        'score': 'float',
+        'tags': ['str'],
+        'history': [
+            {'item_id': 'int', 'timestamp': 'date', 'value': 'float'}
+        ],
+        'location': ('float', 'float')
+    }
+    return DataSampler(structure, count=5)
+
+# -------- 主程序入口 --------
+if __name__ == '__main__':
+    result = generate_user_data()
+
+    print("本数据示例（部分）：")
+    for i, sample in enumerate(result['samples'], 1):
+        print(f"样本 {i}: {sample}")
+
+    print("\n数值统计结果:")
+    for stat, value in result['statistics'].items():
+        print(f"{stat}: {value:.4f}")

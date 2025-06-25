@@ -1,0 +1,12 @@
+robot:
+  ip: "192.168.1.119"
+  naoqi_port: 9559
+  zmq_port: 5555
+  audio_stream_port: 5556
+
+services:
+  motion: true
+  tts: true
+  video: true
+  behavior: true
+  sensor: true

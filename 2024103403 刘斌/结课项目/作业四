@@ -1,0 +1,484 @@
+import torch
+import numpy as np
+import os
+from models import *
+from dataset_dad import *
+from torch.utils.data import DataLoader
+import argparse
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.optim.lr_scheduler import MultiStepLR, ReduceLROnPlateau
+from torchmetrics.functional import pairwise_cosine_similarity
+from sklearn.metrics import confusion_matrix, roc_auc_score, average_precision_score
+import matplotlib.pyplot as plt
+import time
+from eval_utils import evaluation
+from tqdm import tqdm
+
+# 自定义模块
+from attention import SpatioTemporalAttention
+from data_augmentation import FeatureAugmenter
+
+torch.manual_seed(3407)
+
+# ======================
+# 扩展命令行参数
+# ======================
+parser = argparse.ArgumentParser(description='Driving Accident Prediction with ST-GNN')
+parser.add_argument("--dataset_path", type=str, default="data/dad/obj_feat", help="Path to extracted objects data")
+parser.add_argument("--img_dataset_path", type=str, default="data/dad/i3d_feat", help="Path to I3D feature data")
+parser.add_argument("--obj_mapping_file", type=str, default="data/dad/obj_idx_to_labels.json",
+                    help="path to object label mapping file")
+parser.add_argument("--split_path", type=str, default="splits_dad/", help="Path to train/test split")
+parser.add_argument("--num_epochs", type=int, default=100, help="Number of training epochs")
+parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training")
+parser.add_argument("--embedding_dim", type=int, default=512, help="Embedding dimension size")
+parser.add_argument("--num_classes", type=int, default=2, help="Number of classes")
+parser.add_argument("--test_only", action="store_true", help="Test mode only")
+parser.add_argument("--ref_interval", type=int, default=15, help="Reference frame interval")
+parser.add_argument("--checkpoint", type=str, default="", help="Path to checkpoint")
+parser.add_argument("--use_attention", action="store_true", help="Use spatio-temporal attention")
+parser.add_argument("--ttc_prediction", action="store_true", help="Enable TTC prediction task")
+parser.add_argument("--data_aug", action="store_true", help="Enable data augmentation")
+parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
+parser.add_argument("--weight_decay", type=float, default=1e-5, help="Weight decay")
+
+opt = parser.parse_args()
+print(f"Config: {opt}")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+# ======================
+# 改进的模型架构
+# ======================
+class EnhancedAccidentPredictor(nn.Module):
+    def __init__(self, input_dim=4096, embedding_dim=512, img_feat_dim=2048,
+                 num_classes=2, use_attention=True, ttc_prediction=False):
+        super().__init__()
+
+        self.use_attention = use_attention
+        self.ttc_prediction = ttc_prediction
+
+        # 特征投影层
+        self.obj_feat_proj = nn.Sequential(
+            nn.Linear(input_dim, embedding_dim),
+            nn.BatchNorm1d(embedding_dim),
+            nn.ReLU(),
+            nn.Dropout(0.3)
+
+        self.img_feat_proj = nn.Sequential(
+            nn.Linear(img_feat_dim, embedding_dim),
+            nn.BatchNorm1d(embedding_dim),
+            nn.ReLU(),
+            nn.Dropout(0.3))
+
+        # 图神经网络层
+        self.spatial_gnn = GATv2Conv(
+            embedding_dim,
+            embedding_dim // 2,
+            heads=4,
+            edge_dim=1,
+            dropout=0.2)
+
+        self.temporal_gnn = GATv2Conv(
+            embedding_dim,
+            embedding_dim // 2,
+            heads=4,
+            edge_dim=1,
+            dropout=0.2)
+
+        # 注意力机制
+        if use_attention:
+            self.attention = SpatioTemporalAttention(
+                embedding_dim,
+                num_heads=8,
+                temporal_window=5)
+
+        # 多模态融合
+        self.fusion_gate = nn.Sequential(
+            nn.Linear(embedding_dim * 2, embedding_dim),
+            nn.Sigmoid())
+
+        # 分类头
+        self.classifier = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim // 2),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Linear(embedding_dim // 2, num_classes))
+
+        # TTC预测头
+        if ttc_prediction:
+            self.ttc_predictor = nn.Sequential(
+                nn.Linear(embedding_dim, embedding_dim // 2),
+                nn.ReLU(),
+                nn.Linear(embedding_dim // 2, 1),
+                nn.Sigmoid())
+
+    def forward(self, data):
+        x_obj, x_img, edge_index, temp_edges, edge_weights, temp_weights = data
+
+        # 特征投影
+        x_obj = self.obj_feat_proj(x_obj)
+        x_img = self.img_feat_proj(x_img)
+
+        # 空间图处理
+        spatial_feat = F.elu(self.spatial_gnn(
+            x_obj,
+            edge_index,
+            edge_attr=edge_weights))
+
+        # 时间图处理
+        temporal_feat = F.elu(self.temporal_gnn(
+            x_obj,
+            temp_edges,
+            edge_attr=temp_weights))
+
+        # 特征融合
+        fused_feat = torch.cat([spatial_feat, temporal_feat], dim=1)
+
+        # 注意力机制
+        if self.use_attention:
+            fused_feat = self.attention(fused_feat, x_img)
+
+        # 多模态门控融合
+        img_feat = self.img_feat_proj(x_img)
+        gate = self.fusion_gate(torch.cat([fused_feat, img_feat], dim=1))
+        fused_feat = gate * fused_feat + (1 - gate) * img_feat
+
+        # 分类预测
+        logits = self.classifier(fused_feat)
+        probs = F.softmax(logits, dim=-1)
+
+        # TTC预测
+        ttc_pred = None
+        if self.ttc_prediction:
+            ttc_pred = self.ttc_predictor(fused_feat)
+
+        return logits, probs, ttc_pred
+
+
+# ======================
+# 训练和评估函数
+# ======================
+class AccidentPredictorTrainer:
+    def __init__(self, opt):
+        self.opt = opt
+        self.model = EnhancedAccidentPredictor(
+            input_dim=opt.input_dim,
+            embedding_dim=opt.embedding_dim,
+            img_feat_dim=opt.img_feat_dim,
+            num_classes=opt.num_classes,
+            use_attention=opt.use_attention,
+            ttc_prediction=opt.ttc_prediction
+        ).to(device)
+
+        # 数据加载
+        self.train_loader, self.val_loader, self.test_loader = self.create_dataloaders()
+
+        # 优化器
+        self.optimizer = torch.optim.AdamW(
+            self.model.parameters(),
+            lr=opt.lr,
+            weight_decay=opt.weight_decay
+        )
+
+        # 学习率调度
+        self.scheduler = ReduceLROnPlateau(
+            self.optimizer,
+            mode='max',
+            factor=0.5,
+            patience=10,
+            verbose=True
+        )
+
+        # 损失函数
+        self.cls_criterion = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 3.0]).to(device))
+        self.reg_criterion = nn.MSELoss() if opt.ttc_prediction else None
+
+        # 数据增强
+        self.augmenter = FeatureAugmenter() if opt.data_aug else None
+
+    def create_dataloaders(self):
+        """创建数据加载器"""
+        transform = self.augmenter.transform if self.opt.data_aug else None
+
+        train_set = EnhancedDataset(
+            img_path=self.opt.img_dataset_path,
+            obj_path=self.opt.dataset_path,
+            split_path=self.opt.split_path,
+            split_type='train',
+            transform=transform,
+            ref_interval=self.opt.ref_interval
+        )
+
+        val_set = EnhancedDataset(
+            img_path=self.opt.img_dataset_path,
+            obj_path=self.opt.dataset_path,
+            split_path=self.opt.split_path,
+            split_type='val',
+            ref_interval=self.opt.ref_interval
+        )
+
+        test_set = EnhancedDataset(
+            img_path=self.opt.img_dataset_path,
+            obj_path=self.opt.dataset_path,
+            split_path=self.opt.split_path,
+            split_type='test',
+            ref_interval=self.opt.ref_interval
+        )
+
+        train_loader = DataLoader(
+            train_set,
+            batch_size=self.opt.batch_size,
+            shuffle=True,
+            num_workers=4,
+            pin_memory=True
+        )
+
+        val_loader = DataLoader(
+            val_set,
+            batch_size=self.opt.batch_size,
+            num_workers=2,
+            pin_memory=True
+        )
+
+        test_loader = DataLoader(
+            test_set,
+            batch_size=1,  # 测试时batch_size=1
+            num_workers=2,
+            pin_memory=True
+        )
+
+        return train_loader, val_loader, test_loader
+
+    def train_epoch(self, epoch):
+        self.model.train()
+        total_loss = 0.0
+        progress = tqdm(self.train_loader, desc=f"Epoch {epoch + 1}")
+
+        for batch in progress:
+            data = self.prepare_batch(batch)
+
+            self.optimizer.zero_grad()
+
+            # 前向传播
+            logits, probs, ttc_pred = self.model(data)
+            labels = data['labels']
+
+            # 计算损失
+            cls_loss = self.cls_criterion(logits, labels)
+
+            if self.opt.ttc_prediction and ttc_pred is not None:
+                ttc_loss = self.reg_criterion(
+                    ttc_pred.squeeze(),
+                    data['ttc'].float() / 100.0  # 归一化
+                )
+                loss = cls_loss + 0.5 * ttc_loss
+            else:
+                loss = cls_loss
+
+            # 反向传播
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+            self.optimizer.step()
+
+            total_loss += loss.item()
+            progress.set_postfix({"loss": f"{loss.item():.4f}"})
+
+        return total_loss / len(self.train_loader)
+
+    def validate(self):
+        self.model.eval()
+        all_probs, all_labels, all_ttc_pred, all_ttc_true = [], [], [], []
+
+        with torch.no_grad():
+            for batch in tqdm(self.val_loader, desc="Validating"):
+                data = self.prepare_batch(batch)
+
+                logits, probs, ttc_pred = self.model(data)
+
+                # 收集结果
+                all_probs.append(probs[:, 1].cpu())
+                all_labels.append(data['labels'].cpu())
+
+                if self.opt.ttc_prediction:
+                    all_ttc_pred.append(ttc_pred.squeeze().cpu())
+                    all_ttc_true.append(data['ttc'].cpu() / 100.0)
+
+        # 计算分类指标
+        all_probs = torch.cat(all_probs).numpy()
+        all_labels = torch.cat(all_labels).numpy()
+
+        ap = average_precision_score(all_labels, all_probs)
+        auc = roc_auc_score(all_labels, all_probs)
+
+        # 计算TTC指标
+        ttc_mae = float('inf')
+        if self.opt.ttc_prediction:
+            all_ttc_pred = torch.cat(all_ttc_pred).numpy()
+            all_ttc_true = torch.cat(all_ttc_true).numpy()
+            ttc_mae = np.mean(np.abs(all_ttc_pred - all_ttc_true)) * 100  # 还原到原始尺度
+
+        return ap, auc, ttc_mae
+
+    def test(self):
+        # 加载最佳模型
+        self.load_best_model()
+        self.model.eval()
+
+        # ... (类似validate的实现，但在测试集上)
+        # 返回详细测试结果
+
+    def prepare_batch(self, batch):
+        """预处理批数据"""
+        # 实际实现中会包含:
+        # 1. 特征提取和增强
+        # 2. 图结构构建
+        # 3. 数据转移到设备
+        return processed_data
+
+    def save_checkpoint(self, epoch, ap):
+        torch.save({
+            'epoch': epoch,
+            'model_state': self.model.state_dict(),
+            'optimizer_state': self.optimizer.state_dict(),
+            'best_ap': ap
+        }, f"checkpoints/accident_pred_{epoch}.pt")
+
+    def load_best_model(self):
+        # 加载最佳检查点
+        pass
+
+
+# ======================
+# 主训练流程
+# ======================
+def main():
+    os.makedirs("checkpoints", exist_ok=True)
+    os.makedirs("results", exist_ok=True)
+
+    trainer = AccidentPredictorTrainer(opt)
+
+    if opt.test_only:
+        results = trainer.test()
+        print(f"Test Results: AP={results['ap']:.4f}, AUC={results['auc']:.4f}")
+        if opt.ttc_prediction:
+            print(f"TTC MAE: {results['ttc_mae']:.2f} frames")
+        return
+
+    best_ap = 0.0
+    for epoch in range(opt.num_epochs):
+        # 训练阶段
+        train_loss = trainer.train_epoch(epoch)
+
+        # 验证阶段
+        val_ap, val_auc, val_ttc_mae = trainer.validate()
+
+        print(f"Epoch {epoch + 1}/{opt.num_epochs} | "
+              f"Train Loss: {train_loss:.4f} | "
+              f"Val AP: {val_ap:.4f} | "
+              f"Val AUC: {val_auc:.4f}", end='')
+
+        if opt.ttc_prediction:
+            print(f" | TTC MAE: {val_ttc_mae:.2f}")
+        else:
+            print()
+
+        # 学习率调整
+        trainer.scheduler.step(val_ap)
+
+        # 保存最佳模型
+        if val_ap > best_ap:
+            best_ap = val_ap
+            trainer.save_checkpoint(epoch, val_ap)
+            print(f"Saved best model with AP: {val_ap:.4f}")
+
+    # 最终测试
+    test_results = trainer.test()
+    print("\nFinal Test Results:")
+    print(f"AP: {test_results['ap']:.4f}, AUC: {test_results['auc']:.4f}")
+    if opt.ttc_prediction:
+        print(f"TTC MAE: {test_results['ttc_mae']:.2f} frames")
+
+
+# ======================
+# 辅助模块 (部分实现)
+# ======================
+class SpatioTemporalAttention(nn.Module):
+    """时空注意力机制"""
+
+    def __init__(self, dim, num_heads=8, temporal_window=5):
+        super().__init__()
+        self.temporal_window = temporal_window
+        self.attention = nn.MultiheadAttention(
+            embed_dim=dim,
+            num_heads=num_heads,
+            batch_first=True
+        )
+
+    def forward(self, x, visual_feat):
+        # 实现时空注意力
+        # 1. 重组特征为时空块
+        # 2. 应用多头注意力
+        # 3. 融合视觉特征
+        return enhanced_x
+
+
+class FeatureAugmenter:
+    """特征增强模块"""
+
+    def __init__(self, mask_prob=0.1, noise_std=0.05):
+        self.mask_prob = mask_prob
+        self.noise_std = noise_std
+
+    def transform(self, features):
+        # 随机特征掩码
+        if torch.rand(1) < self.mask_prob:
+            mask = torch.rand_like(features) > 0.8
+            features[mask] = 0.0
+
+        # 添加高斯噪声
+        if torch.rand(1) < 0.5:
+            noise = torch.randn_like(features) * self.noise_std
+            features += noise
+
+        return features
+
+
+class EnhancedDataset(Dataset):
+    """增强的数据集类"""
+
+    def __init__(self, img_path, obj_path, split_path, split_type, transform=None, ref_interval=15):
+        super().__init__(
+            img_dataset_path=img_path,
+            dataset_path=obj_path,
+            split_path=split_path,
+            ref_interval=ref_interval,
+            training=(split_type == 'train')
+        )
+        self.transform = transform
+        self.split_type = split_type
+
+    def __getitem__(self, idx):
+        data = super().__getitem__(idx)
+
+        # 应用数据增强
+        if self.transform and self.split_type == 'train':
+            data['obj_feat'] = self.transform(data['obj_feat'])
+            data['img_feat'] = self.transform(data['img_feat'])
+
+        # 添加TTC标签
+        if 'toa' in data:
+            ttc = self.calculate_ttc(data['toa'], data['total_frames'])
+            data['ttc'] = ttc
+
+        return data
+
+    def calculate_ttc(self, toa, total_frames):
+        """计算事故剩余时间（Time-to-Collision）"""
+        return total_frames - toa if toa > 0 else 0
+
+
+if __name__ == "__main__":
+    main()
