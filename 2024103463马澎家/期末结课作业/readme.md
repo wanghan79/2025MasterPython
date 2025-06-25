@@ -92,6 +92,8 @@ python predict_linear.py --test_path ./data/test/S669/S669.npy --model_dir ./Lin
 2. 根据序列同源性进行五折划分；
 
 3. 执行训练脚本：train_linear.py
+  
+4. 最终得到五个模型，SMFFDDG的最终预测结果为五个模型预测结果的平均值
 
 ---
 
@@ -100,3 +102,5 @@ python predict_linear.py --test_path ./data/test/S669/S669.npy --model_dir ./Lin
 为了便于使用，基于PyQt开发了一个交互式的GUI，可以在交互式界面选择不同的数据库（PDB、Uniprot或者手动输入），之后输入蛋白id，便会自动从对应数据库中下载对应的蛋白质，之后可以可以选择突变信息（突变位点、突变后的氨基酸残基）调用训练好的model进行热稳定性变化预测。界面展示如下
 
 ![SMFFDDG GUI交互式界面](./image/GUI2.png)
+
+##!!由于模型较大无法上传，如果需要训练好的模型，请联系我的邮箱pengjiama@nenu.edu.cn
