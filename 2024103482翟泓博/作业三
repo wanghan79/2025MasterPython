@@ -1,1 +1,97 @@
+import numpy as np
+from functools import wraps
 
+def stats_decorator(statistics=None):
+    """
+    统计装饰器，用于计算生成数据的统计特征
+    
+    Args:
+        statistics: 需要计算的统计项列表，可选值为 'SUM', 'AVG', 'VAR', 'RMSE'
+    """
+    if statistics is None:
+        statistics = ['SUM', 'AVG', 'VAR', 'RMSE']
+    
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # 调用原函数生成数据
+            data = func(*args, **kwargs)
+            
+            # 收集所有数值型叶节点
+            numeric_values = []
+            def collect_numeric(obj):
+                if isinstance(obj, (int, float, np.number)):
+                    numeric_values.append(obj)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        collect_numeric(item)
+                elif isinstance(obj, dict):
+                    for value in obj.values():
+                        collect_numeric(value)
+                elif isinstance(obj, tuple):
+                    for item in obj:
+                        collect_numeric(item)
+            
+            # 处理单样本或多样本情况
+            if isinstance(data, list):  # 多样本
+                for sample in data:
+                    collect_numeric(sample)
+            else:  # 单样本
+                collect_numeric(data)
+            
+            # 转换为numpy数组进行统计计算
+            values = np.array(numeric_values)
+            
+            # 计算统计特征
+            results = {}
+            if 'SUM' in statistics:
+                results['SUM'] = np.sum(values)
+            if 'AVG' in statistics:
+                results['AVG'] = np.mean(values)
+            if 'VAR' in statistics:
+                results['VAR'] = np.var(values)
+            if 'RMSE' in statistics:
+                results['RMSE'] = np.sqrt(np.mean(np.square(values)))
+            
+            return data, results
+        
+        return wrapper
+    
+    return decorator
+
+# 以下是使用示例，假设DataSampler类来自作业2
+from data_sampler import DataSampler
+
+# 创建采样器实例
+sampler = DataSampler()
+
+# 定义用户数据结构
+user_structure = {
+    'id': {'_type': 'int', 'min': 1, 'max': 10000},
+    'name': {'_type': 'str', 'length': 10},
+    'age': {'_type': 'int', 'min': 18, 'max': 99},
+    'is_active': {'_type': 'bool'},
+    'last_login': {'_type': 'date'},
+    'scores': {'_type': 'list', 'elements': {'_type': 'float', 'min': 0, 'max': 100}},
+    'address': {
+        'street': {'_type': 'str'},
+        'city': {'_type': 'str'},
+        'zip': {'_type': 'str', 'length': 5, 'charset': string.digits}
+    }
+}
+
+# 使用装饰器修饰generate方法
+@stats_decorator(statistics=['SUM', 'AVG', 'VAR'])
+def generate_users(count):
+    return sampler.generate(user_structure, count=count)
+
+# 生成数据并获取统计结果
+data, stats = generate_users(5)
+
+print("生成的数据:")
+for i, user in enumerate(data):
+    print(f"用户 {i+1}: {user}")
+
+print("\n统计结果:")
+for stat, value in stats.items():
+    print(f"{stat}: {value}")  
