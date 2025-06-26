@@ -1,1 +1,147 @@
+import random
+import string
+from datetime import datetime, timedelta
 
+class DataSampler:
+    """随机数据生成器，支持动态生成嵌套的结构化数据"""
+    
+    def __init__(self):
+        # 注册默认的数据类型生成器
+        self.generators = {
+            'int': self._generate_int,
+            'float': self._generate_float,
+            'str': self._generate_str,
+            'bool': self._generate_bool,
+            'date': self._generate_date,
+            'list': self._generate_list,
+            'tuple': self._generate_tuple,
+            'dict': self._generate_dict
+        }
+    
+    def generate(self, structure, count=1):
+        """
+        根据指定结构生成随机数据样本
+        
+        Args:
+            structure: 描述数据结构的字典或类型标识
+            count: 生成的样本数量
+        
+        Returns:
+            生成的样本列表
+        """
+        return [self._generate_sample(structure) for _ in range(count)]
+    
+    def _generate_sample(self, structure):
+        """递归生成单个样本"""
+        if isinstance(structure, dict):
+            # 字典结构
+            if '_type' in structure:
+                # 显式指定类型
+                data_type = structure['_type']
+                if data_type in self.generators:
+                    return self.generators[data_type](structure)
+                else:
+                    raise ValueError(f"Unsupported data type: {data_type}")
+            else:
+                # 普通字典
+                return self._generate_dict(structure)
+        elif isinstance(structure, list):
+            # 列表结构
+            if len(structure) == 1:
+                # 统一类型的列表
+                element_structure = structure[0]
+                length = random.randint(1, 10)  # 默认长度1-10
+                return [self._generate_sample(element_structure) for _ in range(length)]
+            else:
+                raise ValueError("List structure should contain exactly one element specification")
+        else:
+            # 简单类型或未指定结构
+            if isinstance(structure, type):
+                type_name = structure.__name__
+                if type_name in self.generators:
+                    return self.generators[type_name]({'_type': type_name})
+                else:
+                    raise ValueError(f"Unsupported type: {type_name}")
+            else:
+                raise ValueError(f"Invalid structure specification: {structure}")
+    
+    # 基本数据类型生成器
+    def _generate_int(self, spec):
+        min_val = spec.get('min', 0)
+        max_val = spec.get('max', 100)
+        return random.randint(min_val, max_val)
+    
+    def _generate_float(self, spec):
+        min_val = spec.get('min', 0.0)
+        max_val = spec.get('max', 1.0)
+        precision = spec.get('precision', 2)
+        return round(random.uniform(min_val, max_val), precision)
+    
+    def _generate_str(self, spec):
+        length = spec.get('length', random.randint(5, 20))
+        charset = spec.get('charset', string.ascii_letters + string.digits)
+        return ''.join(random.choice(charset) for _ in range(length))
+    
+    def _generate_bool(self, spec):
+        return random.choice([True, False])
+    
+    def _generate_date(self, spec):
+        start_date = spec.get('start', datetime.now() - timedelta(days=365))
+        end_date = spec.get('end', datetime.now())
+        delta = end_date - start_date
+        random_days = random.randint(0, delta.days)
+        return (start_date + timedelta(days=random_days)).date()
+    
+    # 复合数据类型生成器
+    def _generate_list(self, spec):
+        element_spec = spec.get('elements', {'_type': 'int'})
+        min_length = spec.get('min_length', 1)
+        max_length = spec.get('max_length', 10)
+        length = random.randint(min_length, max_length)
+        return [self._generate_sample(element_spec) for _ in range(length)]
+    
+    def _generate_tuple(self, spec):
+        element_specs = spec.get('elements', [{'_type': 'int'}])
+        return tuple(self._generate_sample(elem_spec) for elem_spec in element_specs)
+    
+    def _generate_dict(self, spec):
+        fields = spec.copy()
+        if '_type' in fields:
+            del fields['_type']
+        return {key: self._generate_sample(value) for key, value in fields.items()}
+
+# 使用示例
+if __name__ == "__main__":
+    sampler = DataSampler()
+    
+    # 示例1：生成用户数据
+    user_structure = {
+        'id': {'_type': 'int', 'min': 1, 'max': 10000},
+        'name': {'_type': 'str', 'length': 10},
+        'age': {'_type': 'int', 'min': 18, 'max': 99},
+        'is_active': {'_type': 'bool'},
+        'last_login': {'_type': 'date'},
+        'tags': {'_type': 'list', 'elements': {'_type': 'str', 'length': 5}},
+        'address': {
+            'street': {'_type': 'str'},
+            'city': {'_type': 'str'},
+            'zip': {'_type': 'str', 'length': 5, 'charset': string.digits}
+        }
+    }
+    
+    users = sampler.generate(user_structure, count=3)
+    for user in users:
+        print(user)
+    
+    # 示例2：生成嵌套列表数据
+    matrix_structure = {
+        '_type': 'list',
+        'elements': {
+            '_type': 'list',
+            'elements': {'_type': 'float', 'min': 0, 'max': 1}
+        }
+    }
+    
+    matrices = sampler.generate(matrix_structure, count=2)
+    for matrix in matrices:
+        print(matrix)    
