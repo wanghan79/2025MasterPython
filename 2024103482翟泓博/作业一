@@ -1,1 +1,52 @@
-1
+import time
+import random
+
+def test_list_performance(size, rounds):
+    # 创建 10000x10000 的 list 矩阵
+    data = [[0 for _ in range(size)] for _ in range(size)]
+    start_time = time.time()
+    
+    # 进行 10000 轮修改，每轮修改一个随机位置的元素
+    for _ in range(rounds):
+        i = random.randint(0, size - 1)
+        j = random.randint(0, size - 1)
+        data[i][j] = random.randint(0, 100)
+    
+    return time.time() - start_time
+
+def test_tuple_performance(size, rounds):
+    # 创建 10000x10000 的 tuple 矩阵
+    data = tuple(tuple(0 for _ in range(size)) for _ in range(size))
+    start_time = time.time()
+    
+    # 进行 10000 轮修改，每轮修改一个随机位置的元素
+    for _ in range(rounds):
+        i = random.randint(0, size - 1)
+        j = random.randint(0, size - 1)
+        # 由于元组不可变，必须创建新元组
+        new_row = tuple(v if idx != j else random.randint(0, 100) for idx, v in enumerate(data[i]))
+        data = tuple(new_row if idx != i else row for idx, row in enumerate(data))
+    
+    return time.time() - start_time
+
+def main():
+    size = 10000  # 矩阵大小
+    rounds = 10000  # 修改轮数
+    
+    print(f"测试矩阵大小: {size}x{size}")
+    print(f"测试修改轮数: {rounds}")
+    
+    # 测试 list 性能
+    list_time = test_list_performance(size, rounds)
+    print(f"List 修改耗时: {list_time:.4f} 秒")
+    
+    # 测试 tuple 性能
+    tuple_time = test_tuple_performance(size, rounds)
+    print(f"Tuple 修改耗时: {tuple_time:.4f} 秒")
+    
+    # 计算性能差异
+    ratio = tuple_time / list_time
+    print(f"Tuple 修改耗时是 List 的 {ratio:.2f} 倍")
+
+if __name__ == "__main__":
+    main()  
