@@ -1,1 +1,61 @@
+import random
+import string
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Union
 
+def generate_random_samples(n: int, **kwargs) -> List[Dict[str, Any]]:
+    
+        samples = generate_random_samples(
+            3,
+            id=int,
+            name=str,
+            scores=[float],
+            address={
+                'city': str,
+                'zipcode': int
+            },
+            friends=[{
+                'name': str,
+                'age': int
+            }]
+        )
+    """
+    def generate_value(schema: Any) -> Any:
+
+        if schema is int:
+            return random.randint(1, 100)
+        elif schema is float:
+            return round(random.uniform(0, 100), 2)
+        elif schema is bool:
+            return random.choice([True, False])
+        elif schema is str:
+            return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        elif schema is datetime:
+            start = datetime(2000, 1, 1)
+            end = datetime(2023, 12, 31)
+            return start + timedelta(seconds=random.randint(0, int((end - start).total_seconds())))
+        
+        elif isinstance(schema, list):
+            if not schema: 
+                return []
+            
+            list_length = random.randint(1, 5)
+            return [generate_value(schema[0]) for _ in range(list_length)]
+        
+        elif isinstance(schema, dict):
+            return {key: generate_value(value_schema) for key, value_schema in schema.items()}
+        
+        elif callable(schema):
+            return schema()
+        
+        else:
+            return schema
+    
+    samples = []
+    for _ in range(n):
+        sample = {}
+        for key, value_schema in kwargs.items():
+            sample[key] = generate_value(value_schema)
+        samples.append(sample)
+    
+    return samples
