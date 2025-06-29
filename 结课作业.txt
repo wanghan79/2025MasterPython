@@ -1,0 +1,209 @@
+车牌识别系统实现
+项目目标
+开发一个车牌识别系统，能够从车辆图片中自动识别车牌号码。系统将包括以下主要步骤：
+图像预处理
+车牌定位
+字符分割
+字符识别
+结果验证和优化
+
+主要思路：
+图像预处理：灰度化、二值化、去噪。
+车牌定位：边缘检测、轮廓提取、轮廓筛选。
+字符分割：水平投影法、垂直投影法。
+字符识别：模板匹配法或深度学习方法（可选）。
+结果验证：验证识别结果的正确性，优化识别过程。
+
+代码实现：
+
+import cv2
+import numpy as np
+import os
+import logging
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Conv2D, Flatten, MaxPooling2D
+from tensorflow.keras.utils import to_categorical
+
+# 图像预处理
+def preprocess_image(image_path):
+    image = cv2.imread(image_path)
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
+    binary_image = cv2.adaptiveThreshold(blurred_image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+    return binary_image
+
+# 车牌定位
+def locate_license_plate(binary_image):
+    edges = cv2.Canny(binary_image, 100, 200)
+    contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        aspect_ratio = float(w) / h
+        area = cv2.contourArea(contour)
+        if 2 < aspect_ratio < 5 and 1000 < area < 5000:
+            return x, y, w, h
+    return None
+
+# 字符分割
+def segment_characters(plate_image):
+    height, width = plate_image.shape
+    horizontal_projection = np.sum(plate_image, axis=1)
+    vertical_projection = np.sum(plate_image, axis=0)
+    
+    # 水平投影分割
+    horizontal_threshold = 0.1 * np.max(horizontal_projection)
+    horizontal_segments = []
+    start = None
+    for i in range(height):
+        if horizontal_projection[i] > horizontal_threshold and start is None:
+            start = i
+        elif horizontal_projection[i] <= horizontal_threshold and start is not None:
+            horizontal_segments.append((start, i))
+            start = None
+    
+    # 垂直投影分割
+    vertical_threshold = 0.1 * np.max(vertical_projection)
+    vertical_segments = []
+    start = None
+    for i in range(width):
+        if vertical_projection[i] > vertical_threshold and start is None:
+            start = i
+        elif vertical_projection[i] <= vertical_threshold and start is not None:
+            vertical_segments.append((start, i))
+            start = None
+    
+    # 结合水平和垂直投影分割字符
+    characters = []
+    for h_start, h_end in horizontal_segments:
+        for v_start, v_end in vertical_segments:
+            char_image = plate_image[h_start:h_end, v_start:v_end]
+            characters.append(char_image)
+    
+    return characters
+
+# 字符识别
+def recognize_characters(character_images, template_library):
+    recognized_characters = []
+    for char_image in character_images:
+        max_similarity = 0
+        recognized_char = None
+        for template_char, template_image in template_library.items():
+            similarity = cv2.matchTemplate(char_image, template_image, cv2.TM_CCOEFF_NORMED)
+            if similarity > max_similarity:
+                max_similarity = similarity
+                recognized_char = template_char
+        recognized_characters.append(recognized_char)
+    return recognized_characters
+
+# 构建模板库
+def build_template_library():
+    template_library = {}
+    template_dir = "templates"
+    for filename in os.listdir(template_dir):
+        char = filename.split('.')[0]
+        template_image = cv2.imread(os.path.join(template_dir, filename), 0)
+        template_library[char] = template_image
+    return template_library
+
+# 图像显示函数
+def show_image(image, title="Image"):
+    cv2.imshow(title, image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+# 图像保存函数
+def save_image(image, filename):
+    cv2.imwrite(filename, image)
+
+# 日志记录函数
+def setup_logger():
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger()
+    return logger
+
+logger = setup_logger()
+
+# 多尺度车牌定位
+def multiscale_locate_license_plate(binary_image, scales=[0.5, 1.0, 1.5]):
+    for scale in scales:
+        resized_image = cv2.resize(binary_image, None, fx=scale, fy=scale, interpolation=cv2.INTER_LINEAR)
+        location = locate_license_plate(resized_image)
+        if location:
+            x, y, w, h = location
+            return int(x / scale), int(y / scale), int(w / scale), int(h / scale)
+    return None
+
+# 字符归一化
+def normalize_character(char_image, size=(20, 20)):
+    return cv2.resize(char_image, size, interpolation=cv2.INTER_AREA)
+
+# 深度学习字符识别（可选）
+def recognize_characters_with_model(character_images, model):
+    recognized_characters = []
+    for char_image in character_images:
+        char_image = normalize_character(char_image)
+        char_image = char_image / 255.0
+        char_image = np.expand_dims(char_image, axis=0)
+        prediction = model.predict(char_image)
+        recognized_char = chr(np.argmax(prediction) + ord('A'))
+        recognized_characters.append(recognized_char)
+    return recognized_characters
+
+# 构建深度学习模型
+def build_model():
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(20, 20, 1)))
+    model.add(MaxPooling2D((2, 2)))
+    model.add(Flatten())
+    model.add(Dense(128, activation='relu'))
+    model.add(Dense(36, activation='softmax'))
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
+
+# 训练深度学习模型
+def train_model(model, X_train, y_train):
+    X_train = np.array(X_train)
+    X_train = X_train.reshape(-1, 20, 20, 1)
+    y_train = to_categorical(y_train)
+    model.fit(X_train, y_train, epochs=10, batch_size=32)
+
+# 加载训练数据
+def load_training_data():
+    X = []
+    y = []
+    template_dir = "training_data"
+    for filename in os.listdir(template_dir):
+        char = filename.split('.')[0]
+        image = cv2.imread(os.path.join(template_dir, filename), 0)
+        X.append(image)
+        y.append(char)
+    return X, y
+
+# 主程序
+if __name__ == "__main__":
+    image_path = "car_image.jpg"
+    binary_image = preprocess_image(image_path)
+    license_plate_location = multiscale_locate_license_plate(binary_image)
+    if license_plate_location:
+        x, y, w, h = license_plate_location
+        license_plate_image = binary_image[y:y+h, x:x+w]
+        show_image(license_plate_image, "License Plate")
+        save_image(license_plate_image, "license_plate.png")
+        character_images = segment_characters(license_plate_image)
+        template_library = build_template_library()
+        license_plate_number = recognize_characters(character_images, template_library)
+        logger.info(f"Recognized License Plate Number: {''.join(license_plate_number)}")
+        
+        # 深度学习模型识别
+        X, y = load_training_data()
+        le = LabelEncoder()
+        y_encoded = le.fit_transform(y)
+        X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
+        model = build_model()
+        train_model(model, X_train, y_train)
+        license_plate_number_model = recognize_characters_with_model(character_images, model)
+        logger.info(f"Recognized License Plate Number (Model): {''.join(license_plate_number_model)}")
+    else:
+        logger.info("License plate not found.")
