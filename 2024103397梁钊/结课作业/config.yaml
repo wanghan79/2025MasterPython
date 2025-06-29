@@ -1,0 +1,35 @@
+# 目标检测配置文件
+
+# 模型配置
+model_type: fasterrcnn_resnet50_fpn
+model_weights: null  # 自定义模型权重路径，如果使用预训练模型则为null
+use_gpu: true
+confidence_threshold: 0.5
+nms_threshold: 0.5
+
+# 数据集配置
+dataset: coco  # 数据集类型，coco或custom
+classes: null  # 如果是自定义数据集，指定类别列表
+
+# 预处理配置
+preprocessing:
+  target_size: 800  # 图像缩放目标尺寸
+  max_size: 1333    # 图像最大尺寸
+
+# 视频处理配置
+video:
+  sample_rate: 1  # 视频帧采样率，每隔多少帧处理一次
+
+# 可视化配置
+visualization:
+  font_scale: 0.5
+  thickness: 2
+
+# 评估配置
+evaluation:
+  iou_threshold: 0.5  # 计算AP时使用的IoU阈值
+
+# 路径配置
+log_dir: logs
+output_dir: results
+ground_truth_dir: null  # 真实标注目录，如果没有则为null    
