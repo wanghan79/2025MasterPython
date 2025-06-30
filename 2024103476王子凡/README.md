@@ -1,7 +1,7 @@
 # Python数据挖掘
 
 
-本项目包含三个独立的作业，分别实现了Python数据结构的性能测试、随机数据生成和统计分析功能。
+本项目包含三个独立的作业和一个结课作业，分别实现了Python数据结构的性能测试、随机数据生成和统计分析功能。
 
 ## 项目结构
 ```
@@ -12,9 +12,12 @@
 ├── assignment2/          # 作业二：随机数据生成器
 │   ├── data_sampler.py
 │   └── README.md
-└── assignment3/          # 作业三：统计装饰器
-    ├── stats_decorator.py
-    └── README.md
+├──  assignment3/          # 作业三：统计装饰器
+│   ├── stats_decorator.py
+│   └── README.md
+└──结课作业/
+    ├── ESSRec_Model.py
+    └── 解释文档.md
 ```
 
 ## 作业说明
