@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级蛋白质电荷分析报告</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --secondary: #7f8c8d;
+            --success: #27ae60;
+            --info: #3498db;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #2c3e50;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Noto Sans', system-ui, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        
+        .report-header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #4a90e2 0%, #2c3e50 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .report-header h1 {
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .report-header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .section-title {
+            color: var(--primary);
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+        }
+        
+        .highlight-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--info);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .property-card {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .property-label {
+            font-weight: 600;
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+        
+        .property-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .plot-container {
+            text-align: center;
+            margin: 25px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .plot-container img {
+            max-width: 100%;
+            border-radius: 4px;
+        }
+        
+        .sequence {
+            font-family: monospace;
+            font-size: 16px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            line-height: 1.8;
+        }
+        
+        .badge-type {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-acidic {
+            background-color: #ffebee;
+            color: #e53935;
+        }
+        
+        .badge-basic {
+            background-color: #e3f2fd;
+            color: #1e88e5;
+        }
+        
+        .badge-neutral {
+            background-color: #f5f5f5;
+            color: #757575;
+        }
+        
+        .table-custom {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .table-custom th {
+            background-color: #f1f8ff;
+            font-weight: 600;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <div class="report-header">
+            <h1>高级蛋白质电荷分析报告</h1>
+            <p>等电点、电荷分布与电泳行为预测</p>
+        </div>
+        
+        <div class="property-grid">
+            <div class="property-card">
+                <div class="property-label">蛋白质序列长度</div>
+                <div class="property-value">{{ sequence_length }} 个氨基酸</div>
+            </div>
+            <div class="property-card">
+                <div class="property-label">分子量</div>
+                <div class="property-value">{{ molecular_weight | round(2) }} Da</div>
+            </div>
+            <div class="property-card">
+                <div class="property-label">等电点(pI)</div>
+                <div class="property-value">{{ pI }}</div>
+            </div>
+            <div class="property-card">
+                <div class="property-label">分析条件</div>
+                <div class="property-value">{{ temperature }}℃, {{ ionic_strength }}M</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">基本信息</h2>
+            <p><strong>蛋白质序列: </strong></p>
+            <div class="sequence">{{ sequence }}</div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">等电点分析</h2>
+            <div class="highlight-box">
+                <p>计算等电点(pI): <strong>{{ pI }}</strong></p>
+                <p>等电点是蛋白质净电荷为零时的pH值，是蛋白质的重要物理化学性质，影响其溶解度、稳定性和电泳行为。</p>
+            </div>
+            
+            <div class="plot-container">
+                <img src="{{ charge_plot }}" alt="电荷随pH变化曲线">
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">电泳行为预测</h2>
+            <div class="highlight-box bg-light-warning">
+                <p>在pH = <strong>{{ electrophoresis_ph }}</strong> 的条件下：</p>
+                <ul>
+                    <li>蛋白质净电荷: <strong>{{ charge_at_ph }}</strong></li>
+                    <li>预测电泳迁移方向: <strong>{{ direction }}</strong></li>
+                    <li>预测相对迁移率: <strong>{{ mobility }}</strong></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">温度影响分析</h2>
+            <p>温度变化会影响氨基酸的解离常数(pKa)，从而影响等电点(pI)。以下是在不同温度下计算的pI值：</p>
+            <div class="plot-container">
+                <img src="{{ temp_plot }}" alt="温度对等电点的影响">
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">氨基酸组成分析</h2>
+            <div class="plot-container">
+                <img src="{{ aa_plot }}" alt="氨基酸组成分析">
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-custom table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>氨基酸</th>
+                            <th>数量</th>
+                            <th>百分比</th>
+                            <th>电荷类型</th>
+                            <th>在pH={{ electrophoresis_ph }}下的电荷</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aa in amino_acid_composition %}
+                        <tr>
+                            <td>{{ aa.amino_acid }}</td>
+                            <td>{{ aa.count }}</td>
+                            <td>{{ aa.percentage }}</td>
+                            <td>
+                                <span class="badge-type 
+                                    {% if aa.type == 'acidic' %}badge-acidic{% endif %}
+                                    {% if aa.type == 'basic' %}badge-basic{% endif %}
+                                    {% if aa.type not in ['acidic', 'basic'] %}badge-neutral{% endif %}">
+                                    {{ aa.type if aa.type else 'neutral' }}
+                                </span>
+                            </td>
+                            <td>{{ amino_acid_charges[aa.amino_acid] | round(4) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">主要电荷贡献者 (pH={{ electrophoresis_ph }})</h2>
+            <p>以下残基对蛋白质净电荷贡献最大：</p>
+            <div class="table-responsive">
+                <table class="table table-custom table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>残基/基团</th>
+                            <th>电荷贡献</th>
+                            <th>类型</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for residue, charge in charge_contributors.items() %}
+                        <tr>
+                            <td>{{ residue }}</td>
+                            <td>{{ charge | round(4) }}</td>
+                            <td>
+                                {% if charge > 0 %}
+                                    <span class="badge-basic badge-type">正电荷</span>
+                                {% elif charge < 0 %}
+                                    <span class="badge-acidic badge-type">负电荷</span>
+                                {% else %}
+                                    <span class="badge-neutral badge-type">中性</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        {% if pdb_analysis %}
+        <div class="section">
+            <h2 class="section-title">PDB结构分析</h2>
+            <p>PDB文件结构分析结果：</p>
+            
+            <div class="highlight-box">
+                <p>结构包含 {{ pdb_analysis.chains | length }} 条链：</p>
+                <ul>
+                    {% for chain in pdb_analysis.chains %}
+                    <li>链 {{ chain.id }}: {{ chain.length }} 个残基</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            {% if pdb_analysis.secondary_structure %}
+            <div class="mt-4">
+                <h5>二级结构分布</h5>
+                <ul>
+                    {% for chain_id, structures in pdb_analysis.secondary_structure.items() %}
+                    <li>链 {{ chain_id }}: 
+                        {% set counts = {'H': 0, 'B': 0, 'E': 0, 'G': 0, 'I': 0, 'T': 0, 'S': 0, ' ': 0} %}
+                        {% for _, ss in structures.items() %}
+                            {% if counts.update({ss: counts[ss] + 1}) %} {% endif %}
+                        {% endfor %}
+                        
+                        {% for ss, count in counts.items() if count > 0 %}
+                            {{ self.ss_name(ss) }}: {{ count }} ({{ (count / structures | length * 100) | round(1) }}%) 
+                        {% endfor %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="footer">
+            <p>报告生成时间: {{ current_time }} | 高级蛋白质电荷分析工具 v2.0</p>
+            <p class="text-muted">本报告基于生物化学原理计算生成，结果仅供参考</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

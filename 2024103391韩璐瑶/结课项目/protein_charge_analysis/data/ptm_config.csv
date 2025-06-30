@@ -1,0 +1,7 @@
+amino_acid,position,type,effect,pKa,pKa_effect,effect_type,description
+S,ANY,phosphorylation,0,6.5,-1,acidic,丝氨酸磷酸化
+T,ANY,phosphorylation,0,6.5,-1,acidic,苏氨酸磷酸化
+Y,ANY,phosphorylation,0,6.5,-1,acidic,酪氨酸磷酸化
+K,ANY,acetylation,0,10.5,-1,basic,赖氨酸乙酰化
+N_term,1,acetylation,0,7.0,-1,basic,N端乙酰化
+C,ANY,disulfide,0,0,0,neutral,二硫键形成
