@@ -1,1 +1,37 @@
+import time
+import random
 
+# 设置测试参数
+matrix_size = 10000
+num_iterations = 10000
+
+# 创建列表矩阵
+list_matrix = [[0 for _ in range(matrix_size)] for _ in range(matrix_size)]
+
+# 测试列表修改性能
+start_time = time.time()
+for _ in range(num_iterations):
+    i = random.randint(0, matrix_size - 1)
+    j = random.randint(0, matrix_size - 1)
+    list_matrix[i][j] = random.randint(1, 100)
+list_time = time.time() - start_time
+
+# 创建元组矩阵（元组的元组）
+tuple_matrix = tuple(tuple(0 for _ in range(matrix_size)) for _ in range(matrix_size))
+
+# 测试元组修改性能
+start_time = time.time()
+for _ in range(num_iterations):
+    i = random.randint(0, matrix_size - 1)
+    j = random.randint(0, matrix_size - 1)
+    # 由于元组不可变，需要创建新的元组
+    new_row = tuple(v if idx != j else random.randint(1, 100) for idx, v in enumerate(tuple_matrix[i]))
+    tuple_matrix = tuple(new_row if idx != i else row for idx, row in enumerate(tuple_matrix))
+tuple_time = time.time() - start_time
+
+# 输出结果
+print(f"列表修改耗时: {list_time:.4f} 秒")
+print(f"元组修改耗时: {tuple_time:.4f} 秒")
+print(f"元组/列表耗时比: {tuple_time/list_time:.2f}x")
+
+#测试结果通常会显示元组的修改性能远差于列表，尤其是在大数据量下。对于 10000×10000 的矩阵，元组的修改耗时可能是列表的数千倍。这体现了不可变数据结构在需要频繁修改场景下的性能劣势。
