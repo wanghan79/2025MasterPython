@@ -1,1 +1,99 @@
+import numpy as np
+import functools
+def stats_decorator(*stats):
+   
+    valid_stats = {'SUM', 'AVG', 'VAR', 'RMSE'}
+    invalid = [s for s in stats if s not in valid_stats]
+    if invalid:
+        raise ValueError(f"无效统计项: {invalid}。有效统计项: {valid_stats}")
+    
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            samples = func(*args, **kwargs)
+            analyzer = StatsAnalyzer(stats)
+            results = analyzer.analyze(samples)
+            return samples, results
+        return wrapper
+    return decorator
 
+class StatsAnalyzer:
+    
+    def __init__(self, stats):
+        self.stats = stats
+    
+    def analyze(self, samples):
+       
+        numeric_values = self._extract_numeric_values(samples)
+        
+        results = {}
+        if not numeric_values:
+            return results
+            
+        if 'SUM' in self.stats:
+            results['SUM'] = sum(numeric_values)
+            
+        if 'AVG' in self.stats:
+            results['AVG'] = np.mean(numeric_values)
+            
+        if 'VAR' in self.stats:
+            results['VAR'] = np.var(numeric_values)
+            
+        if 'RMSE' in self.stats:
+            mse = np.mean([x**2 for x in numeric_values])
+            results['RMSE'] = np.sqrt(mse)
+            
+        return results
+    
+    def _extract_numeric_values(self, data):
+        values = []
+        
+        if isinstance(data, dict):
+            for v in data.values():
+                values.extend(self._extract_numeric_values(v))
+                
+        elif isinstance(data, (list, tuple)):
+            for item in data:
+                values.extend(self._extract_numeric_values(item))
+                
+        elif isinstance(data, (int, float, np.number)):
+            values.append(data)
+            
+        return values
+
+# 应用装饰器到原有的样本生成函数
+@stats_decorator('SUM', 'AVG', 'VAR', 'RMSE')
+def generate_samples_with_stats(structure, num_samples=1, max_depth=5):
+    return generate_samples(structure, num_samples, max_depth)
+
+# 示例用法
+if __name__ == "__main__":
+    # 使用相同的用户结构定义
+    user_structure = {
+        'type': 'dict',
+        'keys': {
+            'id': {'type': 'int'},
+            'age': {'type': 'int', 'params': {'min': 18, 'max': 99}},
+            'height': {'type': 'float', 'params': {'min': 150.0, 'max': 200.0}},
+            'scores': {
+                'type': 'list',
+                'items': {'type': 'int', 'params': {'min': 0, 'max': 100}},
+                'min_length': 3,
+                'max_length': 5
+            }
+        }
+    }
+    
+    # 生成样本并获取统计结果
+    samples, stats = generate_samples_with_stats(user_structure, num_samples=5)
+    
+    # 打印样本
+    for i, sample in enumerate(samples, 1):
+        print(f"样本 {i}:")
+        print(sample)
+        print("-" * 40)
+    
+    # 打印统计结果
+    print("\n统计结果:")
+    for stat, value in stats.items():
+        print(f"{stat}: {value:.4f}")
